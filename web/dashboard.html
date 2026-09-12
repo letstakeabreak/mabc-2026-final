@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>전원 넣기 전 부품 통합 카드 에이전트 — MVP</title>
+<title>전원 넣기 전 부품 통합 카드 에이전트</title>
 <style>
   :root {
     --bg: #f5f5f7;
@@ -11,6 +11,7 @@
     --surface-2: #f5f5f7;
     --text: #1d1d1f;
     --text-soft: #6e6e73;
+    --text-tertiary: #86868b;
     --accent: #0071e3;
     --accent-soft: #e7f0ff;
     --border: #d2d2d7;
@@ -31,6 +32,7 @@
     --surface-2: #333336;
     --text: #f5f5f7;
     --text-soft: #a1a1a6;
+    --text-tertiary: #6e6e73;
     --accent: #0a84ff;
     --accent-soft: #1c2c4a;
     --border: #48484a;
@@ -54,7 +56,7 @@
     text-rendering: optimizeLegibility;
   }
 
-  .wrap { max-width: 720px; margin: 0 auto; padding: 16px 16px 32px; }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 16px 16px 32px; }
 
   header.top {
     display: flex; align-items: center; justify-content: space-between;
@@ -95,6 +97,10 @@
   .card h2 {
     font-size: 0.95rem; font-weight: 600; margin: 0 0 8px;
   }
+  .card h3 {
+    font-size: 0.8rem; font-weight: 600; margin: 0 0 5px;
+    color: var(--text-soft); text-transform: uppercase; letter-spacing: 0.04em;
+  }
 
   label.field { display: block; font-size: 0.78rem; color: var(--text-soft); margin: 0 0 4px; font-weight: 500; }
   textarea, input[type="text"], input[type="url"] {
@@ -131,6 +137,7 @@
   button.danger {
     background: var(--danger-soft); color: var(--danger); border-color: var(--danger);
   }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
 
   .state-bar {
     display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
@@ -221,6 +228,24 @@
   .badge.blocked { color: var(--danger); border-color: var(--danger); background: var(--danger-soft); }
   .badge.provisional { color: var(--warn); border-color: var(--warn); background: #fff7d6; }
   [data-theme="dark"] .badge.provisional { background: #3a3322; border-color: var(--warn); color: var(--warn); }
+
+  .section-subhead { font-size: 0.78rem; }
+  .evidence-item {
+    margin-bottom: 5px; padding: 5px 6px; border: 1px solid var(--border);
+    border-radius: 4px; background: var(--surface);
+  }
+  .evidence-item .evidence-source {
+    font-size: 0.68rem; color: var(--text-soft); font-family: var(--mono);
+  }
+  .evidence-item .evidence-claim-type {
+    font-size: 0.65rem; color: var(--text-soft); margin-left: 4px;
+  }
+
+  .section-subhead {
+    font-size: 0.72rem; font-weight: 600; color: var(--text-soft);
+    text-transform: uppercase; letter-spacing: 0.03em;
+    margin: 6px 0 3px; padding-bottom: 2px; border-bottom: 1px solid var(--border);
+  }
 </style>
 </head>
 <body>
@@ -233,7 +258,6 @@
     </div>
     <div class="right">
       <span class="pill dev"><span class="dot"></span> 개발 중</span>
-      <span class="pill beta"><span class="dot"></span> Hermes Agent + Solar Pro 4</span>
       <button class="theme-toggle" id="themeToggle" title="테마 전환" aria-label="테마 전환">
         <span id="themeIcon">🌙</span>
       </button>
@@ -278,19 +302,20 @@
           <input type="text" id="powerInfo" placeholder="예: 3.3V GPIO, 5V USB" />
         </div>
       </div>
+
       <div class="actions">
+        <button type="button" id="exampleBtn" class="secondary">예시로 해보기를 눌러보기</button>
         <button type="submit" class="primary">관찰 사실 반영</button>
         <button type="button" class="secondary" id="resetBtn">입력 초기화</button>
-        <button type="button" class="secondary" id="demoBtn">데모용 예시 입력</button>
       </div>
-      <div class="hint" id="inputHint">스킬의 카드 상태 모델과 일곱 구역 출력을 그대로 보여줍니다. 실제 연동 전에는 시뮬레이션 응답입니다.</div>
+      <div class="hint" id="inputHint">예시로 해보기는 고정된 시나리오(예시)입니다. 실제 입력에 대한 판정과 응답은 아직 연동되지 않았습니다.</div>
     </form>
   </section>
 
   <!-- ===== 일곱 구역 출력 ===== -->
   <section class="card">
     <h2>일곱 구역 출력</h2>
-    <div class="hint" style="margin-bottom:6px;">아래 일곱 구역은 스킬의 출력 계약을 그대로 따릅니다.</div>
+    <div class="hint" style="margin-bottom:6px;">아래 일곱 구역은 스킬의 출력 계약을 그대로 따릅니다. 실제 데이터가 들어오면 [확인된 자료]와 [확인된 전기 조건]에 출처·버전·target·확인 날짜와 함께 채워집니다.</div>
     <div class="sections" id="sections">
       <div class="section" data-section="observations">
         <div class="section-head" role="button" tabindex="0" aria-expanded="false">
@@ -308,13 +333,13 @@
         <div class="section-head" role="button" tabindex="0" aria-expanded="false">
           <span class="chev">▶</span><span class="tag">확인된 자료</span><span class="name">[확인된 자료]</span>
         </div>
-        <div class="section-body"><p id="s-sources">- 없음</p></div>
+        <div class="section-body" id="s-sources"><p class="evidence-list"><div class="evidence-item">- 없음</div></p></div>
       </div>
       <div class="section" data-section="electrical">
         <div class="section-head" role="button" tabindex="0" aria-expanded="false">
           <span class="chev">▶</span><span class="tag">확인된 전기 조건</span><span class="name">[확인된 전기 조건]</span>
         </div>
-        <div class="section-body"><p id="s-electrical">- 없음</p></div>
+        <div class="section-body" id="s-electrical"><p class="evidence-list"><div class="evidence-item">- 없음</div></p></div>
       </div>
       <div class="section" data-section="blocked">
         <div class="section-head" role="button" tabindex="0" aria-expanded="false">
@@ -355,7 +380,7 @@
     카드 상태: <span class="mono">PROVISIONAL / BLOCKED / VERIFIED</span>, 단계: <span class="mono">0/5 ~ 5/5</span>.
     계약 항목 근거: IC·캐리어 분리(항목 4), 출처 우선순위(항목 8), 절대 최대 정격/출처 충돌 5열 표(항목 9·10), 출력 계약(항목 2), 상태 모델(항목 7).
     아직 실제 부품은 연결·측정하지 않았으며, 카드 5/5는 전원 인가나 런타임 통합 시험 완료가 아닙니다.
-    현재는 시뮬레이션 모드이며, 실제 스킬 연동은 별도 연동이 필요합니다.
+    현재는 <strong>[시뮬레이션] 모드</strong>이며, 실제 스킬 호출 응답은 <span class="mono">/api/card</span> 연동 후 반영됩니다. 웹 검색 구역은 저작권 표시 문제로 제거됐습니다.
   </footer>
 </div>
 
@@ -432,19 +457,86 @@
   var powerInfo = document.getElementById('powerInfo');
   var submitBtn = document.getElementById('submitBtn');
   var resetBtn = document.getElementById('resetBtn');
-  var demoBtn = document.getElementById('demoBtn');
+  var exampleBtn = document.getElementById('exampleBtn');
   var inputHint = document.getElementById('inputHint');
 
   form.addEventListener('submit', function(e) {
     e.preventDefault();
-    submitObservation();
+    submitToApi();
   });
+
+  function handleApiError(err) {
+    var msg = '알 수 없는 오류가 발생했습니다.';
+    if (err && typeof err === 'object') {
+      if (err.error === 'upstage_api_key_not_configured') {
+        msg = '서버 설정 문제입니다. 잠시 후 다시 시도해 주세요.';
+      } else if (err.error === 'upstage_api_error') {
+        msg = '외부 스킬 호출에 실패했습니다. 잠시 후 다시 시도해 주세요.';
+      } else if (err.error === 'upstage_empty_response' || err.error === 'upstage_empty_content') {
+        msg = '스킬 응답이 비어 있습니다. 다시 시도해 주세요.';
+      } else if (err.error === 'skill_md_read_failed') {
+        msg = '스킬 원문을 읽지 못했습니다. 저장소를 다시 확인해 주세요.';
+      } else if (err.error === 'invalid_request_body') {
+        msg = '요청 형식이 올바르지 않습니다.';
+      } else if (err.error === 'method_not_allowed') {
+        msg = '요청 방법이 올바르지 않습니다.';
+      } else {
+        msg = '외부 스킬 호출에 실패했습니다. 잠시 후 다시 시도해 주세요.';
+      }
+    }
+    toast(msg);
+    inputHint.textContent = '스킬 호출에 실패했습니다. 입력을 다시 확인하거나 잠시 후 다시 시도해 주세요.';
+  }
+
+  async function submitToApi() {
+    var formData = {
+      partName: partName.value.trim(),
+      targetBoard: targetBoard.value.trim(),
+      observations: observations.value.trim(),
+      photoLink: photoLink.value.trim(),
+      powerInfo: powerInfo.value.trim(),
+    };
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = '처리 중…';
+    inputHint.textContent = '스킬 호출 중입니다…';
+
+    try {
+      var res = await fetch('/api/card', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      var data = await res.json();
+
+      if (!res.ok || !data.ok) {
+        handleApiError(data);
+        return;
+      }
+
+      var parsed = parseCardResponse(data.content);
+      if (parsed.error) {
+        toast('스킬 응답이 계약 형식과 다릅니다: ' + parsed.error);
+        inputHint.textContent = '스킬 응답이 예상된 카드 형식과 다릅니다. 잠시 후 다시 시도해 주세요.';
+        return;
+      }
+
+      updateDisplay(parsed, true);
+      toast('스킬 호출 결과가 반영됐습니다.');
+    } catch (err) {
+      handleApiError({ error: 'upstage_request_failed' });
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = '관찰 사실 반영';
+    }
+  }
   resetBtn.addEventListener('click', function() {
     form.reset();
     updateFromForm(false);
     toast('입력이 초기화됐습니다.');
   });
-  demoBtn.addEventListener('click', function() {
+  exampleBtn.addEventListener('click', function() {
     partName.value = 'GY-521 (MPU-6050 IC 포함 모듈)';
     targetBoard.value = 'ESP32 30핀 개발보드';
     observations.value = '파란색 보드. 칩에 MPU-6050 글자 보임. 핀 4개. I2C로 가속도/자이로 측정 목적. 3.3V 전원 사용 예정.';
@@ -452,7 +544,7 @@
     powerInfo.value = '3.3V';
     var resp = buildDemoResponse(true);
     updateDisplay(resp, true);
-    toast('데모용 예시 입력을 채웠습니다.');
+    toast('"예시로 해보기의 시나리오 B 고정 카드"가 채워졌습니다. 이는 실제 판정 결과가 아니라 예시입니다.');
   });
 
   function escapeHTML(s) {
@@ -461,138 +553,261 @@
     });
   }
 
-  function buildDemoResponse(filled) {
-    if (!filled) {
-      return {
-        stage: 0,
-        state: 'PROVISIONAL',
-        stateLine: '[카드 0/5] 식별 근거 수집 중',
-        sections: {
-          observations: '- 없음',
-          identify: '- PROVISIONAL',
-          sources: '- 없음',
-          electrical: '- 없음',
-          blocked: '- 없음',
-          next: [
-            '칩 글자와 핀 이름이 보이는 앞뒤 사진을 준비한다.',
-            '가능하면 구매 링크나 제품명을 알려준다.'
-          ],
-          completeness: '- PROVISIONAL'
-        }
-      };
+  // ---------------- 카드 상태 모델 ----------------
+
+  function getPriorityByUrl(url, title) {
+    var lower = (url + ' ' + (title || '')).toLowerCase();
+    if (/invenSense|invensense|texas instruments|ti\.com|st\.com|analog devices|analog\.com|microchip|infineon|nXP|espressif\.com|arduino\.cc|raspberrypi\.org|mpu-6050|mpu6050|sht31|sht30|bme280|bme680|dht11|dht22|hc-sr04|sr04|rc522|mifare|ssd1306|hd44780|lcd1602|oled|relay|servo|sg90|mg996r|2n2222|lm358|mcp|pcf8574/i.test(lower)) {
+      if (/datasheet|register-map|technical-reference|reference-manual|product-page|product/i.test(lower)) return 1;
+      if (/github\.com\/|arduino-libraries|randomnerdtutorials|lastminuteengineers|docs\.arduino/i.test(lower)) return 2;
+    }
+    if (/aliexpress|amazon|ebay|woly|gearbest|robokits|dfrobot|sparkfun|adafruit|seeed|botland|botshop|melopero/i.test(lower)) return 3;
+    if (/digikey|mouser|farnell|newark|rs-online/i.test(lower)) return 4;
+    if (/blog|forum|reddit|medium|tutorial|howto|learn|guide|example/i.test(lower)) return 5;
+    return 5;
+  }
+
+  function classifyClaimType(text) {
+    var lower = text.toLowerCase();
+    if (/absolute maximum|abs max|rating|최대 정격/i.test(lower)) return '절대 최대 정격 주장';
+    if (/operating voltage|supply voltage|vcc|vdd|input voltage|동작 전압|전원 전압|입력 전압/i.test(lower)) return '동작/입력 전압 주장';
+    if (/current|ma|mA|consumption|consumption current|소비 전류/i.test(lower)) return '전류 주장';
+    if (/gpio|logic level|3\.3v|5v|level shifter|레벨|로직/i.test(lower)) return '로직 레벨 주장';
+    if (/i2c|address|slave address|register|주소|레지스터/i.test(lower)) return 'I2C 주소/레지스터 주장';
+    if (/pin|pinout|배선|배선도|연결|연결법|wiring|pins/i.test(lower)) return '핀/배선 주장';
+    if (/current limit|gpio.*current|최대 전류|핀 전류/i.test(lower)) return 'GPIO 전류 한계 주장';
+    return '일반 정보';
+  }
+
+  function detectConflicts(results) {
+    var conflicts = [];
+    var p1 = results.filter(function(r) { return r.priority === 1 && /voltage|current|absolute maximum|operating|supply|동작|전압|전류|정격/i.test(r.content); });
+    var p3 = results.filter(function(r) { return r.priority === 3 && /voltage|current|5v|3\.3v|가능|사용|전원/i.test(r.content); });
+
+    if (p1.length > 0 && p3.length > 0) {
+      p1.forEach(function(m) {
+        p3.forEach(function(p) {
+          if (isVoltageConflict(m.content, p.content) || isCurrentConflict(m.content, p.content) || isRatingConflict(m.content, p.content)) {
+            conflicts.push({
+              source: '구매 페이지: ' + truncate(p.title, 40),
+              claim: truncate(p.content, 100),
+              target: '대상 부품 + 타겟 보드 조합',
+              conflict: '구매 페이지 주장과 제조사 자료 주장 간 차이 (우선순위: P1 > P3)',
+              unblock: '제조사 공식 데이터시트 리비전 명시, 공식 회로도, 실제 측정'
+            });
+          }
+        });
+      });
     }
 
-    var p = (partName.value || '').trim();
-    var b = (targetBoard.value || '').trim();
-    var o = (observations.value || '').trim();
-    var l = (photoLink.value || '').trim();
-    var pw = (powerInfo.value || '').trim();
+    var p2 = results.filter(function(r) { return r.priority === 2 && /voltage|current|절대 최대|동작|전원/i.test(r.content); });
+    if (p1.length > 0 && p2.length > 0) {
+      p1.forEach(function(m) {
+        p2.forEach(function(d) {
+          if (isNumericConflict(m.content, d.content)) {
+            conflicts.push({
+              source: '공식 문서 간 차이: ' + truncate(m.title, 30) + ' vs ' + truncate(d.title, 30),
+              claim: '동일 주제 전압/전류 값 차이',
+              target: '대상 부품/리비전/문서 버전',
+              conflict: '공식 자료 간 값 불일치 — 문서 버전/리비전 특정 필요',
+              unblock: '문서 버전/리비전 명시, 원문 대조'
+            });
+          }
+        });
+      });
+    }
 
+    return conflicts;
+  }
+
+  function isVoltageConflict(mfgText, purchaseText) {
+    var mv = extractVoltage(mfgText);
+    var pv = extractVoltage(purchaseText);
+    if (mv !== null && pv !== null && Math.abs(mv - pv) > 0.5) return true;
+    if (/\babsolute maximum\b/i.test(mfgText) && /\b5v\b/i.test(purchaseText) && /\b3\.6v\b/i.test(mfgText)) return true;
+    return false;
+  }
+
+  function isCurrentConflict(mfgText, purchaseText) {
+    var mc = extractCurrent(mfgText);
+    var pc = extractCurrent(purchaseText);
+    if (mc !== null && pc !== null && Math.abs(mc - pc) > 10) return true;
+    return false;
+  }
+
+  function isRatingConflict(mfgText, purchaseText) {
+    if (/\babsolute maximum\b/i.test(mfgText) && /\b5v\b/i.test(purchaseText)) return true;
+    return false;
+  }
+
+  function isNumericConflict(t1, t2) {
+    var v1 = extractVoltage(t1) || extractCurrent(t1);
+    var v2 = extractVoltage(t2) || extractCurrent(t2);
+    if (v1 !== null && v2 !== null && Math.abs(v1 - v2) > 0.5) return true;
+    return false;
+  }
+
+  function extractVoltage(text) {
+    var m = text.match(/(\d+\.?\d*)\s*(?:v|cc|volt)/i);
+    if (m) return parseFloat(m[1]);
+    m = text.match(/absolute maximum.*?(\d+\.?\d*)\s*v/i);
+    if (m) return parseFloat(m[1]);
+    return null;
+  }
+
+  function extractCurrent(text) {
+    var m = text.match(/(\d+\.?\d*)\s*ma/i);
+    if (m) return parseFloat(m[1]);
+    return null;
+  }
+
+  function truncate(s, n) {
+    if (!s) return '';
+    return s.length > n ? s.slice(0, n) + '…' : s;
+  }
+
+  // ---------------- SKILL.md 카드 출력 예시 기반 응답 파서 ----------------
+  // 이 파서는 Upstage/Solar Pro 4가 반환한 카드 응답 텍스트를 7개 구역으로 분해하고
+  // 구조를 검증합니다. 구조가 어긋나면 오류를 명확히 반환합니다.
+  function parseCardResponse(rawText) {
+    if (!rawText || typeof rawText !== 'string') {
+      return { error: '응답 텍스트가 없습니다.' };
+    }
+
+    var text = rawText.trim();
+    var lines = text.split('\n');
+    var stateLine = '';
     var sections = {};
+    var currentSection = null;
+    var sectionOrder = ['관찰 사실', '식별 상태', '확인된 자료', '확인된 전기 조건', '현재 차단 항목', '지금 할 것', '카드 완성도'];
+    var foundSections = [];
+    var sectionContent = {};
 
-    // 관찰 사실
-    var obsLines = [];
-    if (p) obsLines.push('- 부품/모듈: ' + p);
-    if (b) obsLines.push('- 타겟 보드: ' + b);
-    if (o) obsLines.push('- 관찰 사실: ' + o);
-    if (l) obsLines.push('- 링크: ' + l);
-    if (pw) obsLines.push('- 전원 정보: ' + pw);
-    if (obsLines.length === 0) obsLines.push('- 없음');
-    sections.observations = obsLines.join('\n');
-
-    // 식별 상태
-    var hasIC = /MPU-6050|GY-521|가속도|자이로|IMU/i.test(o) || /MPU-6050|GY-521|IMU/i.test(p);
-    var hasMotor = /모터|진동|코인/i.test(o) || /모터|진동|코인/i.test(p);
-
-    if (!p && !o) {
-      sections.identify = '- PROVISIONAL\n- 관찰 사실 부족';
-    } else if (hasIC && b) {
-      sections.identify = '- PROVISIONAL\n- IC 후보: MPU-6050 (캐리어 GY-521와 분리 필요)\n- 타겟 보드 확인됨: ' + b;
-    } else if (hasMotor) {
-      sections.identify = '- PROVISIONAL\n- 코인 진동모터 추정 (표식/모델 미확정)\n- 타겟 보드 확인됨: ' + b;
-    } else {
-      sections.identify = '- PROVISIONAL\n- 제공된 정보만으로는 IC·캐리어 특정 미흡\n- 타겟 보드 확인됨: ' + (b || '미입력');
+    // 1) 상태 줄 추출: 첫 줄 또는 문서 내 유일한 [카드 N/5] 형태
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i].trim();
+      if (/^\[카드\s*\d+\s*\/\s*5\]\s/.test(line) || /^\[카드\s*\d+\s*\/\s*5\]$/.test(line)) {
+        stateLine = line;
+        break;
+      }
     }
 
-    // 확인된 자료
-    if (l) {
-      sections.sources = '- 구매/사진 링크: ' + l + '\n  (판매 페이지는 외형·변형 확인 근거로만 사용, 전기 수치의 최종 근거로는 사용하지 않음)';
-    } else {
-      sections.sources = '- 없음\n- 제조사 데이터시트·공식 제품 페이지 미확인';
+    if (!stateLine) {
+      return { error: '응답의 첫 줄이 [카드 N/5] 형태가 아닙니다. SKILL.md 출력 계약을 따르지 않았습니다.' };
     }
 
-    // 확인된 전기 조건
-    if (pw) {
-      sections.electrical = '- 전원 정보(사용자 진술): ' + pw + '\n- IC 동작 전압·모듈 입력 전압: 미확인\n- 로직 레벨·일반/피크 전류·대상 보드 공급 한계: 미확인\n- 절대 최대 정격을 권장 동작 조건으로 바꾸지 않음';
-    } else {
-      sections.electrical = '- 없음\n- 전원 정보가 없어 전기 호환성 판정 진입 전';
+    // 2) 상태 줄에서 단계 번호 추출
+    var stageMatch = stateLine.match(/\[카드\s*(\d+)\s*\/\s*5\]/);
+    if (!stageMatch) {
+      return { error: '상태 줄에서 단계 번호를 읽지 못했습니다: ' + stateLine };
+    }
+    var stage = parseInt(stageMatch[1], 10);
+    if (isNaN(stage) || stage < 0 || stage > 5) {
+      return { error: '단계 번호가 범위를 벗어났습니다: ' + stage };
     }
 
-    // 현재 차단 항목
-    if (!hasIC && !hasMotor && !p && !o) {
-      sections.blocked = '- 없음';
-    } else if (!p || !b) {
-      sections.blocked = '- 부품명 또는 타겟 보드가 미입력이면 최종 배선·전원 행동을 확정하지 않음';
-    } else if (!hasIC) {
-      sections.blocked = '- IC·캐리어 특정 전까지 모델별 전압·핀·직결 허용·전원 인가 행동 BLOCKED';
-    } else {
-      sections.blocked = '- 아직 검증된 출처·전기 호환성 미확인 상태이므로 전원 인가/직결/배선은 BLOCKED';
+    // 3) 7개 구역 파싱
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      var trimmed = line.trim();
+
+      // 구역 제목 줄: [구역 이름] 형태
+      var titleMatch = trimmed.match(/^\[(\w+)\]$/);
+      if (titleMatch) {
+        var name = titleMatch[1];
+        if (sectionOrder.indexOf(name) !== -1) {
+          currentSection = name;
+          foundSections.push(name);
+          sectionContent[name] = [];
+          continue;
+        }
+      }
+
+      // 구역 내용 수집
+      if (currentSection) {
+        if (trimmed) {
+          sectionContent[currentSection].push(trimmed);
+        }
+      }
     }
 
-    // 지금 할 것 — 질문은 이 구역 안에서만, 최대 2개
-    var nextItems = [];
-    if (!p || !o) {
-      nextItems.push('칩 글자와 핀 이름이 보이는 앞뒤 사진을 준비한다.');
-      if (!p && !o) nextItems.push('가능하면 구매 링크나 제품명을 알려준다.');
-    } else if (!hasIC) {
-      nextItems.push('정확한 IC·캐리어 식별을 위해 앞뒷면 사진, 표식, 구매 링크를 제공한다.');
-    } else if (!l) {
-      nextItems.push('제조사 데이터시트 또는 공식 제품 페이지를 확인한다.');
-    } else {
-      nextItems.push('출처 우선순위에 따라 공식 자료·구매 페이지를 대조한다.');
-      nextItems.push('IC와 캐리어(GY-521 등)를 분리해 전기 호환성을 판정한다.');
+    // 4) 7개 구역이 모두 있고, 순서가 맞는지 검증
+    if (foundSections.length !== sectionOrder.length) {
+      return { error: '구역 개수가 부족합니다. 발견된 구역: ' + foundSections.join(', ') };
     }
-    if (nextItems.length > 2) nextItems = nextItems.slice(0, 2);
-    if (nextItems.length === 0) nextItems.push('없음');
-    sections.next = nextItems;
-
-    // 카드 완성도
-    if (!p && !o) {
-      sections.completeness = '- PROVISIONAL';
-    } else if (!hasIC) {
-      sections.completeness = '- PROVISIONAL\n- 정확한 대상·리비전·적용 범위 부족';
-    } else {
-      sections.completeness = '- PROVISIONAL\n- 출처·전기 호환성 검증 전';
+    for (var k = 0; k < sectionOrder.length; k++) {
+      if (foundSections[k] !== sectionOrder[k]) {
+        return { error: '구역 순서가 잘못됐습니다. 예상: ' + sectionOrder.join(' → ') + ', 발견: ' + foundSections.join(' → ') };
+      }
     }
 
-    var stage = 0;
-    if (hasIC && b && l) stage = 2;
+    // 5) 각 구역 내용이 비어 있지 않은지 확인 (최소 한 줄)
+    for (var k = 0; k < sectionOrder.length; k++) {
+      var contents = sectionContent[sectionOrder[k]];
+      if (!contents || contents.length === 0) {
+        return { error: '구역 "' + sectionOrder[k] + '"에 내용이 없습니다.' };
+      }
+    }
+
+    // 6) 상태 상태 추출: [식별 상태] 구역에서 PROVISIONAL/BLOCKED/VERIFIED
+    var identifyLines = sectionContent['식별 상태'] || [];
+    var state = 'PROVISIONAL';
+    for (var i = 0; i < identifyLines.length; i++) {
+      var iline = identifyLines[i];
+      if (/^\s*-\s*PROVISIONAL/i.test(iline)) { state = 'PROVISIONAL'; break; }
+      if (/^\s*-\s*BLOCKED/i.test(iline)) { state = 'BLOCKED'; break; }
+      if (/^\s*-\s*VERIFIED/i.test(iline)) { state = 'VERIFIED'; break; }
+    }
+
+    // 7) 내부 형식: 각 구역을 개행 유지 문자열로 변환
+    var sectionsOut = {};
+    for (var i = 0; i < sectionOrder.length; i++) {
+      sectionsOut[sectionOrder[i]] = sectionContent[sectionOrder[i]].join('\n');
+    }
 
     return {
+      ok: true,
       stage: stage,
-      state: 'PROVISIONAL',
-      stateLine: '[카드 ' + stage + '/5] ' + (
-        stage === 0 ? '식별 근거 수집 중' :
-        stage === 1 ? 'IC·캐리어·타겟 후보 분리' :
-        stage === 2 ? '정확한 출처 대조' :
-        stage === 3 ? '전기 호환성 판정' :
-        stage === 4 ? '통합 조건 정리' : '재사용 카드 완성'
-      ),
-      sections: sections
+      state: state,
+      stateLine: stateLine,
+      sections: sectionsOut
     };
   }
 
-  function sectionHTML(lines) {
-    if (typeof lines === 'string') {
-      return '<p>' + escapeHTML(lines).replace(/\n/g, '</p><p>') + '</p>';
-    }
-    if (Array.isArray(lines)) {
-      var out = '';
-      lines.forEach(function(l) { out += '<p>- ' + escapeHTML(l) + '</p>'; });
-      return out;
-    }
-    return '<p>- 없음</p>';
-  }
+
+
+  // ---------------- SKILL.md 빈 카드 템플릿 (파서 샘플) ----------------
+  var SKILL_MD_EMPTY_CARD_SAMPLE = [
+    '[카드 0/5] 식별 근거 수집 중',
+    '',
+    '[관찰 사실]',
+    '- 없음',
+    '',
+    '[식별 상태]',
+    '- PROVISIONAL',
+    '',
+    '[확인된 자료]',
+    '- 없음',
+    '',
+    '[확인된 전기 조건]',
+    '- 없음',
+    '',
+    '[현재 차단 항목]',
+    '- 없음',
+    '',
+    '[지금 할 것]',
+    '- 칩 글자와 핀 이름이 보이는 앞뒤 사진을 준비한다.',
+    '- 가능하면 구매 링크나 제품명을 알려준다.',
+    '',
+    '[카드 완성도]',
+    '- PROVISIONAL',
+    ''
+  ].join('\\n');
+
+
+
+
+
 
   var currentResponse = null;
   var sectionEls = {
@@ -630,21 +845,30 @@
       : '아직 관찰 사실이 없습니다. 아래 입력을 채워 반영하세요.';
   }
 
+  function sectionHTML(lines) {
+    if (typeof lines === 'string') {
+      return '<p>' + escapeHTML(lines).replace(/\\n/g, '</p><p>') + '</p>';
+    }
+    if (Array.isArray(lines)) {
+      var out = '';
+      lines.forEach(function(l) { out += '<p>- ' + escapeHTML(l) + '</p>'; });
+      return out;
+    }
+    return '<p>- 없음</p>';
+  
+
+  // ---------------- 입력 폼 상태 반영 ----------------
   function updateFromForm(filled) {
+    // 현재는 /api/card 연동 전이므로, buildDemoResponse를 사용합니다.
     var resp = buildDemoResponse(filled);
     updateDisplay(resp, filled);
   }
 
-  function submitObservation() {
-    var filled = !!(partName.value.trim() || observations.value.trim() || targetBoard.value.trim());
-    var resp = buildDemoResponse(filled);
-    updateDisplay(resp, filled);
-    if (filled) toast('관찰 사실이 반영됐습니다.');
-    else toast('관찰 사실 입력이 비어 있습니다.');
-  }
+}
 
   // ---------------- 카드 저장 ----------------
   var STORAGE_KEY = 'mabc-mvp-cards-v1';
+
   function getCards() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
