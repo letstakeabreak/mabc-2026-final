@@ -1,0 +1,16 @@
+# 인증 정보
+.env
+.env.*
+!.env.example
+
+# 빌드, 배포
+node_modules/
+.next/
+dist/
+.vercel/
+
+# macOS
+.DS_Store
+
+# 다른 스킬
+_ref/
