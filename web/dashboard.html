@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>전원 넣기 전 부품 통합 카드 에이전트 — 대시보드</title>
+<title>전원 넣기 전 부품 통합 카드 에이전트 — MVP</title>
 <style>
   :root {
     --bg: #f5f5f7;
@@ -11,7 +11,6 @@
     --surface-2: #f5f5f7;
     --text: #1d1d1f;
     --text-soft: #6e6e73;
-    --text-on-accent: #ffffff;
     --accent: #0071e3;
     --accent-soft: #e7f0ff;
     --border: #d2d2d7;
@@ -20,19 +19,18 @@
     --warn: #ffd60a;
     --ok: #34c759;
     --ok-soft: #e8f5e9;
-    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
-    --radius: 10px;
-    --radius-sm: 6px;
     --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
     --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --radius: 8px;
+    --radius-sm: 5px;
+    --shadow: 0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
   }
   [data-theme="dark"] {
     --bg: #1c1c1e;
     --surface: #2c2c2e;
-    --surface-2: #3a3a3c;
+    --surface-2: #333336;
     --text: #f5f5f7;
     --text-soft: #a1a1a6;
-    --text-on-accent: #ffffff;
     --accent: #0a84ff;
     --accent-soft: #1c2c4a;
     --border: #48484a;
@@ -50,40 +48,39 @@
     background: var(--bg);
     color: var(--text);
     font-family: var(--sans);
-    line-height: 1.55;
+    font-size: 13px;
+    line-height: 1.45;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
 
-  .wrap { max-width: 780px; margin: 0 auto; padding: 16px 16px 48px; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 16px 16px 32px; }
 
   header.top {
-    display: flex; align-items: flex-start; justify-content: space-between;
-    gap: 12px; margin-bottom: 18px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; margin-bottom: 14px; flex-wrap: wrap;
   }
-  header.top h1 {
-    font-size: 1.35rem; font-weight: 600; margin: 0 0 4px; letter-spacing: -0.01em;
-  }
-  header.top .sub {
-    font-size: 0.85rem; color: var(--text-soft); margin: 0;
-  }
+  header.top h1 { font-size: 1.1rem; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+  header.top .sub { font-size: 0.8rem; color: var(--text-soft); margin: 2px 0 0; }
+  header.top .right { display: flex; align-items: center; gap: 6px; }
+
   .theme-toggle {
     appearance: none; border: 1px solid var(--border);
     background: var(--surface); color: var(--text);
-    border-radius: 999px; width: 38px; height: 38px;
+    width: 30px; height: 30px; border-radius: 6px;
+    cursor: pointer; font-size: 13px; line-height: 1;
     display: inline-flex; align-items: center; justify-content: center;
-    cursor: pointer; font-size: 1rem; line-height: 1;
-    transition: background 0.15s, border-color 0.15s, transform 0.1s;
   }
   .theme-toggle:hover { border-color: var(--accent); }
-  .theme-toggle:active { transform: scale(0.95); }
 
   .pill {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 4px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 500;
-    border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 2px 8px; border-radius: 999px;
+    font-size: 11px; font-weight: 500;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text);
   }
-  .pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-soft); }
+  .pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-soft); }
   .pill.dev .dot { background: var(--warn); }
   .pill.beta .dot { background: var(--accent); }
 
@@ -92,150 +89,149 @@
     border: 1px solid var(--border);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
-    padding: 16px;
-    margin-bottom: 16px;
+    padding: 14px;
+    margin-bottom: 12px;
   }
   .card h2 {
-    font-size: 1rem; font-weight: 600; margin: 0 0 10px;
-    display: flex; align-items: center; gap: 8px;
+    font-size: 0.95rem; font-weight: 600; margin: 0 0 8px;
   }
-  .card h2 .ic { font-size: 1.1rem; }
 
-  label.field { display: block; font-size: 0.85rem; color: var(--text-soft); margin: 0 0 6px; font-weight: 500; }
-  textarea, input[type="text"], input[type="url"], select {
-    width: 100%; font-family: var(--sans); font-size: 0.95rem;
+  label.field { display: block; font-size: 0.78rem; color: var(--text-soft); margin: 0 0 4px; font-weight: 500; }
+  textarea, input[type="text"], input[type="url"] {
+    width: 100%; font-family: var(--sans); font-size: 0.85rem;
     color: var(--text); background: var(--surface-2);
     border: 1px solid var(--border); border-radius: var(--radius-sm);
-    padding: 10px 12px; resize: vertical;
+    padding: 6px 8px; resize: vertical;
     transition: border-color 0.15s, box-shadow 0.15s;
   }
-  textarea:focus, input:focus, select:focus {
+  textarea:focus, input:focus {
     outline: none; border-color: var(--accent);
     box-shadow: 0 0 0 3px var(--accent-soft);
   }
-  textarea { min-height: 110px; }
+  textarea { min-height: 80px; }
 
-  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  @media (max-width: 560px) { .row { grid-template-columns: 1fr; } }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 520px) { .row { grid-template-columns: 1fr; } }
 
-  .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
   button {
-    font-family: var(--sans); font-size: 0.9rem; font-weight: 500;
-    border-radius: var(--radius-sm); padding: 9px 14px; cursor: pointer;
-    border: 1px solid transparent; transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    font-family: var(--sans); font-size: 0.8rem; font-weight: 500;
+    border-radius: var(--radius-sm); padding: 6px 10px; cursor: pointer;
+    border: 1px solid transparent; transition: background 0.15s, border-color 0.15s;
   }
-  button:active { transform: scale(0.98); }
+  button:active { transform: translateY(1px); }
   button.primary {
-    background: var(--accent); color: var(--text-on-accent);
-    border-color: var(--accent);
+    background: var(--accent); color: #fff; border-color: var(--accent);
   }
   button.primary:hover { filter: brightness(1.05); }
   button.secondary {
     background: var(--surface); color: var(--text); border-color: var(--border);
   }
   button.secondary:hover { border-color: var(--accent); }
-  button.danger { background: var(--danger-soft); color: var(--danger); border-color: var(--danger); }
-  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.danger {
+    background: var(--danger-soft); color: var(--danger); border-color: var(--danger);
+  }
 
   .state-bar {
-    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-    padding: 10px 12px; border-radius: var(--radius-sm);
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    padding: 7px 10px; border-radius: var(--radius-sm);
     background: var(--surface-2); border: 1px solid var(--border);
-    margin-bottom: 14px;
+    margin-bottom: 10px;
   }
   .state-bar .badge {
-    font-family: var(--mono); font-size: 0.9rem; font-weight: 600;
-    padding: 4px 10px; border-radius: var(--radius-sm);
+    font-family: var(--mono); font-size: 0.8rem; font-weight: 600;
+    padding: 2px 7px; border-radius: 4px;
     background: var(--bg); border: 1px solid var(--border);
   }
   .state-bar .badge.verified { color: var(--ok); border-color: var(--ok); background: var(--ok-soft); }
   .state-bar .badge.blocked { color: var(--danger); border-color: var(--danger); background: var(--danger-soft); }
   .state-bar .badge.provisional { color: var(--warn); border-color: var(--warn); background: #fff7d6; }
   [data-theme="dark"] .state-bar .badge.provisional { background: #3a3322; border-color: var(--warn); color: var(--warn); }
-  .state-bar .status-text { font-size: 0.85rem; color: var(--text-soft); }
+  .state-bar .status-text { font-size: 0.78rem; color: var(--text-soft); }
   .state-bar .spacer { flex: 1; }
 
-  section.sections {
-    display: flex; flex-direction: column; gap: 8px;
-  }
+  .sections { display: flex; flex-direction: column; gap: 6px; }
   .section {
     border: 1px solid var(--border); border-radius: var(--radius-sm);
     background: var(--surface-2); overflow: hidden;
   }
-  .section > .section-head {
-    display: flex; align-items: center; gap: 8px;
-    padding: 10px 12px; cursor: pointer; user-select: none;
-    font-weight: 500; font-size: 0.9rem;
+  .section-head {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 9px; cursor: pointer; user-select: none;
+    font-weight: 500; font-size: 0.82rem;
   }
-  .section > .section-head .chev {
-    transition: transform 0.2s; font-size: 0.75rem; color: var(--text-soft);
-  }
+  .section-head .chev { transition: transform 0.15s; font-size: 0.7rem; color: var(--text-soft); }
   .section.open > .section-head .chev { transform: rotate(90deg); }
-  .section > .section-head .tag {
-    font-size: 0.7rem; font-weight: 600; padding: 2px 6px; border-radius: 4px;
-    background: var(--bg); border: 1px solid var(--border); color: var(--text-soft);
-    text-transform: uppercase; letter-spacing: 0.03em;
+  .section-head .tag {
+    font-size: 0.65rem; font-weight: 600; padding: 1px 4px;
+    border-radius: 3px; text-transform: uppercase; letter-spacing: 0.03em;
+    border: 1px solid var(--border); background: var(--bg); color: var(--text-soft);
   }
-  .section > .section-head .tag.verified { background: var(--ok-soft); color: var(--ok); border-color: var(--ok); }
-  .section > .section-head .tag.blocked { background: var(--danger-soft); color: var(--danger); border-color: var(--danger); }
-  .section > .section-head .tag.provisional { background: #fff7d6; color: var(--warn); border-color: var(--warn); }
-  [data-theme="dark"] .section > .section-head .tag.provisional { background: #3a3322; border-color: var(--warn); color: var(--warn); }
-  .section > .body { padding: 0 12px 12px; display: none; }
-  .section.open > .body { display: block; }
-  .section > .body p { margin: 0 0 6px; }
-  .section > .body p:last-child { margin-bottom: 0; }
-  .section > .body ul { margin: 0 0 6px; padding-left: 18px; }
-  .section > .body li { margin-bottom: 2px; }
-  .section > .body code, .section > .body .mono {
-    font-family: var(--mono); font-size: 0.85rem; background: var(--bg);
-    padding: 1px 5px; border-radius: 4px;
+  .section-head .tag.verified { background: var(--ok-soft); color: var(--ok); border-color: var(--ok); }
+  .section-head .tag.blocked { background: var(--danger-soft); color: var(--danger); border-color: var(--danger); }
+  .section-head .tag.provisional { background: #fff7d6; color: var(--warn); border-color: var(--warn); }
+  [data-theme="dark"] .section-head .tag.provisional { background: #3a3322; border-color: var(--warn); color: var(--warn); }
+  .section-head .name { flex: 1; }
+  .section-body { display: none; padding: 0 9px 7px; }
+  .section.open > .section-body { display: block; }
+  .section-body p { margin: 0 0 3px; font-size: 0.82rem; }
+  .section-body p:last-child { margin-bottom: 0; }
+  .section-body ul { margin: 0 0 3px; padding-left: 14px; }
+  .section-body li { margin-bottom: 1px; font-size: 0.82rem; }
+  .section-body code, .section-body .mono {
+    font-family: var(--mono); font-size: 0.78rem; background: var(--bg);
+    padding: 1px 3px; border-radius: 3px;
   }
 
-  .empty { color: var(--text-soft); font-size: 0.9rem; padding: 10px 0; }
-
-  table.list { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  .list-empty { color: var(--text-soft); font-size: 0.8rem; padding: 8px 0; text-align: center; }
+  table.list { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
   table.list th, table.list td {
-    text-align: left; padding: 8px 8px; border-bottom: 1px solid var(--border);
+    text-align: left; padding: 5px 6px; border-bottom: 1px solid var(--border);
   }
   table.list th { color: var(--text-soft); font-weight: 500; }
-  table.list td .mono { font-family: var(--mono); font-size: 0.8rem; }
-  .list-empty { color: var(--text-soft); font-size: 0.85rem; }
+  table.list td .mono { font-family: var(--mono); font-size: 0.72rem; }
 
   .footer-note {
-    margin-top: 24px; padding-top: 14px; border-top: 1px solid var(--border);
-    font-size: 0.8rem; color: var(--text-soft);
+    margin-top: 16px; padding-top: 10px; border-top: 1px solid var(--border);
+    font-size: 0.72rem; color: var(--text-soft);
   }
   .footer-note code, .footer-note .mono {
-    font-family: var(--mono); background: var(--bg); padding: 1px 5px; border-radius: 4px;
+    font-family: var(--mono); background: var(--bg); padding: 1px 3px; border-radius: 3px;
   }
+
+  .hint { font-size: 0.72rem; color: var(--text-soft); margin-top: 6px; }
 
   .toast {
-    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    position: fixed; bottom: 16px; left: 50%;
+    transform: translateX(-50%) translateY(6px);
+    background: var(--surface); border: 1px solid var(--border);
     box-shadow: 0 8px 24px rgba(0,0,0,0.18);
-    padding: 10px 14px; font-size: 0.85rem; color: var(--text);
+    padding: 6px 10px; border-radius: var(--radius-sm);
+    font-size: 0.78rem; color: var(--text);
     opacity: 0; transition: opacity 0.2s, transform 0.2s; pointer-events: none; z-index: 50;
   }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-  .hidden { display: none !important; }
-  .hint { font-size: 0.8rem; color: var(--text-soft); margin-top: 6px; }
-  .radio-row { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; }
-  .radio-row label { font-size: 0.85rem; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
-  .radio-row input[type="radio"] { width: 16px; height: 16px; accent-color: var(--accent); }
-
-  .input-hint { color: var(--text-soft); font-size: 0.8rem; margin-top: 4px; }
+  .badge {
+    font-family: var(--mono); font-size: 0.72rem; font-weight: 600;
+    padding: 1px 5px; border-radius: 3px;
+    background: var(--bg); border: 1px solid var(--border); color: var(--text);
+  }
+  .badge.verified { color: var(--ok); border-color: var(--ok); background: var(--ok-soft); }
+  .badge.blocked { color: var(--danger); border-color: var(--danger); background: var(--danger-soft); }
+  .badge.provisional { color: var(--warn); border-color: var(--warn); background: #fff7d6; }
+  [data-theme="dark"] .badge.provisional { background: #3a3322; border-color: var(--warn); color: var(--warn); }
 </style>
 </head>
 <body>
-<div class="wrap" role="main">
+<div class="wrap">
 
   <header class="top">
     <div>
       <h1>전원 넣기 전 부품 통합 카드 에이전트</h1>
       <p class="sub">ESP32/Arduino에 부품을 붙이기 전, IC와 캐리어를 분리해 식별하고 전기 호환성을 근거와 함께 판정하는 재사용 부품 카드</p>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;">
+    <div class="right">
       <span class="pill dev"><span class="dot"></span> 개발 중</span>
       <span class="pill beta"><span class="dot"></span> Hermes Agent + Solar Pro 4</span>
       <button class="theme-toggle" id="themeToggle" title="테마 전환" aria-label="테마 전환">
@@ -244,10 +240,9 @@
     </div>
   </header>
 
-  <!-- ===== 현재 세션 카드 상태 ===== -->
-  <section class="card" aria-labelledby="sessionTitle">
-    <h2 id="sessionTitle"><span class="ic">📦</span> 현재 카드</h2>
-
+  <!-- ===== 카드 입력 ===== -->
+  <section class="card">
+    <h2>부품 통합 카드</h2>
     <div class="state-bar" id="stateBar" aria-live="polite">
       <span class="badge" id="stateBadge">카드 0/5</span>
       <span class="status-text" id="stateText">식별 근거 수집 중 — 관찰 사실을 입력해 주세요.</span>
@@ -258,140 +253,109 @@
     <form id="inputForm" novalidate>
       <div class="row">
         <div>
-          <label class="field" for="partName">부품/모듈 이름 (예: GY-521, MPU-6050, 코인 진동모터)</label>
-          <input type="text" id="partName" placeholder="예: GY-521" />
-          <div class="input-hint" id="partNameHint">IC와 캐리어를 분리해 적을수록 좋습니다. 예: "MPU-6050 IC가 들어간 파란색 GY-521 모듈"</div>
+          <label class="field" for="partName">부품/모듈 이름</label>
+          <input type="text" id="partName" placeholder="예: GY-521, MPU-6050, 코인 진동모터" />
+          <div class="hint" id="partNameHint">IC와 캐리어를 분리해 적을수록 좋습니다. 예: "MPU-6050 IC가 들어간 파란색 GY-521 모듈"</div>
         </div>
         <div>
-          <label class="field" for="targetBoard">타겟 보드 (예: ESP32 개발보드, Arduino Uno)</label>
+          <label class="field" for="targetBoard">타겟 보드</label>
           <input type="text" id="targetBoard" placeholder="예: ESP32 30핀 개발보드" />
         </div>
       </div>
-
-      <div class="row" style="margin-top:12px;">
+      <div class="row" style="margin-top:8px;">
         <div style="grid-column: 1 / -1;">
-          <label class="field" for="observations">관찰 사실 (색·표식·형태·핀 수·커넥터·구매 링크·원하는 역할·전원 정보를 있는 대로)</label>
-          <textarea id="observations" placeholder="예: 파란색 보드, 칩에 'MPU-6050' 글자 보임, 4핀, 3.3V 전원 사용 예정, I2C로 가속도/자이로 측정 목적"></textarea>
-          <div class="input-hint">사진·구매 링크가 있으면 아래 링크 칸에도 적어 주세요.</div>
+          <label class="field" for="observations">관찰 사실</label>
+          <textarea id="observations" placeholder="색·표식·형태·핀 수·커넥터·구매 링크·원하는 역할·전원 정보를 있는 대로"></textarea>
         </div>
       </div>
-
-      <div class="row" style="margin-top:12px;">
+      <div class="row" style="margin-top:8px;">
         <div>
-          <label class="field" for="photoLink">사진 링크 / 구매 링크 (있는 것만)</label>
+          <label class="field" for="photoLink">사진/구매 링크 (있는 것만)</label>
           <input type="url" id="photoLink" placeholder="https://… 또는 비워 둠" />
         </div>
         <div>
-          <label class="field" for="powerInfo">사용 전원 / 전압 정보 (있는 것만)</label>
-          <input type="text" id="powerInfo" placeholder="예: 3.3V GPIO, 5V USB 전원" />
+          <label class="field" for="powerInfo">사용 전원/전압 (있는 것만)</label>
+          <input type="text" id="powerInfo" placeholder="예: 3.3V GPIO, 5V USB" />
         </div>
       </div>
-
       <div class="actions">
-        <button type="submit" class="primary" id="submitBtn">관찰 사실 반영</button>
+        <button type="submit" class="primary">관찰 사실 반영</button>
         <button type="button" class="secondary" id="resetBtn">입력 초기화</button>
         <button type="button" class="secondary" id="demoBtn">데모용 예시 입력</button>
       </div>
-      <div class="hint" id="inputHint">관찰 사실을 반영하면 카드 단계와 일곱 구역 출력이 갱신됩니다. 아직 백엔드에 연결되지 않았으므로, 현재는 스킬 구조를 따르는 시뮬레이션 응답을 보여줍니다.</div>
+      <div class="hint" id="inputHint">스킬의 카드 상태 모델과 일곱 구역 출력을 그대로 보여줍니다. 실제 연동 전에는 시뮬레이션 응답입니다.</div>
     </form>
   </section>
 
   <!-- ===== 일곱 구역 출력 ===== -->
-  <section class="card" aria-labelledby="sectionsTitle">
-    <h2 id="sectionsTitle"><span class="ic">📋</span> 일곱 구역 출력</h2>
-    <div class="hint" style="margin-bottom:10px;">아래 일곱 구역은 스킬의 출력 계약을 그대로 따릅니다. 각 구역은 열어서 내용을 볼 수 있습니다.</div>
+  <section class="card">
+    <h2>일곱 구역 출력</h2>
+    <div class="hint" style="margin-bottom:6px;">아래 일곱 구역은 스킬의 출력 계약을 그대로 따릅니다.</div>
     <div class="sections" id="sections">
       <div class="section" data-section="observations">
         <div class="section-head" role="button" tabindex="0" aria-expanded="false">
-          <span class="chev">▶</span>
-          <span class="tag">관찰 사실</span>
-          <span>[관찰 사실]</span>
+          <span class="chev">▶</span><span class="tag">관찰 사실</span><span class="name">[관찰 사실]</span>
         </div>
-        <div class="body"><p id="s-observations">- 없음</p></div>
+        <div class="section-body"><p id="s-observations">- 없음</p></div>
       </div>
       <div class="section" data-section="identify">
         <div class="section-head" role="button" tabindex="0" aria-expanded="false">
-          <span class="chev">▶</span>
-          <span class="tag">식별 상태</span>
-          <span>[식별 상태]</span>
+          <span class="chev">▶</span><span class="tag">식별 상태</span><span class="name">[식별 상태]</span>
         </div>
-        <div class="body"><p id="s-identify">- PROVISIONAL</p></div>
+        <div class="section-body"><p id="s-identify">- PROVISIONAL</p></div>
       </div>
       <div class="section" data-section="sources">
         <div class="section-head" role="button" tabindex="0" aria-expanded="false">
-          <span class="chev">▶</span>
-          <span class="tag">확인된 자료</span>
-          <span>[확인된 자료]</span>
+          <span class="chev">▶</span><span class="tag">확인된 자료</span><span class="name">[확인된 자료]</span>
         </div>
-        <div class="body"><p id="s-sources">- 없음</p></div>
+        <div class="section-body"><p id="s-sources">- 없음</p></div>
       </div>
       <div class="section" data-section="electrical">
         <div class="section-head" role="button" tabindex="0" aria-expanded="false">
-          <span class="chev">▶</span>
-          <span class="tag">확인된 전기 조건</span>
-          <span>[확인된 전기 조건]</span>
+          <span class="chev">▶</span><span class="tag">확인된 전기 조건</span><span class="name">[확인된 전기 조건]</span>
         </div>
-        <div class="body"><p id="s-electrical">- 없음</p></div>
+        <div class="section-body"><p id="s-electrical">- 없음</p></div>
       </div>
       <div class="section" data-section="blocked">
         <div class="section-head" role="button" tabindex="0" aria-expanded="false">
-          <span class="chev">▶</span>
-          <span class="tag">현재 차단 항목</span>
-          <span>[현재 차단 항목]</span>
+          <span class="chev">▶</span><span class="tag">현재 차단 항목</span><span class="name">[현재 차단 항목]</span>
         </div>
-        <div class="body"><p id="s-blocked">- 없음</p></div>
+        <div class="section-body"><p id="s-blocked">- 없음</p></div>
       </div>
       <div class="section" data-section="next">
         <div class="section-head" role="button" tabindex="0" aria-expanded="false">
-          <span class="chev">▶</span>
-          <span class="tag">지금 할 것</span>
-          <span>[지금 할 것]</span>
+          <span class="chev">▶</span><span class="tag">지금 할 것</span><span class="name">[지금 할 것]</span>
         </div>
-        <div class="body"><p id="s-next">- 칩 글자와 핀 이름이 보이는 앞뒤 사진을 준비한다.</p><p>- 가능하면 구매 링크나 제품명을 알려준다.</p></div>
+        <div class="section-body" id="s-next"></div>
       </div>
       <div class="section" data-section="completeness">
         <div class="section-head" role="button" tabindex="0" aria-expanded="false">
-          <span class="chev">▶</span>
-          <span class="tag">카드 완성도</span>
-          <span>[카드 완성도]</span>
+          <span class="chev">▶</span><span class="tag">카드 완성도</span><span class="name">[카드 완성도]</span>
         </div>
-        <div class="body"><p id="s-completeness">- PROVISIONAL</p></div>
+        <div class="section-body"><p id="s-completeness">- PROVISIONAL</p></div>
       </div>
     </div>
   </section>
 
-  <!-- ===== 카드 목록 ===== -->
-  <section class="card" aria-labelledby="listTitle">
-    <h2 id="listTitle"><span class="ic">🗂️</span> 완료된 카드 목록</h2>
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
-      <button type="button" class="primary" id="saveBtn">현재 카드를 목록에 저장</button>
+  <!-- ===== 저장된 카드 목록 ===== -->
+  <section class="card">
+    <h2>저장된 카드</h2>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+      <button type="button" class="primary" id="saveBtn" style="background:var(--accent);color:#fff;border-color:var(--accent);">현재 카드 저장</button>
       <button type="button" class="secondary" id="exportBtn">내보내기(JSON)</button>
       <button type="button" class="danger" id="clearBtn">전체 삭제</button>
     </div>
-    <div id="listContainer">
+    <div id="listBody">
       <p class="list-empty">저장된 카드가 없습니다. 관찰 사실을 반영한 뒤 저장해 주세요.</p>
     </div>
   </section>
 
-  <!-- ===== 연동/설정 ===== -->
-  <section class="card" aria-labelledby="connectTitle">
-    <h2 id="connectTitle"><span class="ic">⚙️</span> 연동 설정</h2>
-    <div class="radio-row">
-      <label><input type="radio" name="mode" value="sim" checked /> 시뮬레이션 (현재 동작 방식)</label>
-      <label><input type="radio" name="mode" value="live" /> 실제 스킬 연동 (준비 전)</label>
-    </div>
-    <div class="hint" id="connectHint" style="margin-top:10px;">
-      현재는 <span class="mono">시뮬레이션</span> 모드입니다. 스킬의 출력 구조(카드 상태 모델 + 일곱 구역)를 그대로 보여주는 데모 응답을 생성합니다.
-      실제 연동 시에는 <span class="mono">/api/component-card</span> 같은 엔드포인트로 관찰 사실을 보내고, 스킬 응답(카드 0/5~5/5, PROVISIONAL/BLOCKED/VERIFIED, 일곱 구역)을 받아 채웁니다.
-      <div style="margin-top:8px;">자리 표시 엔드포인트: <span class="mono">POST /api/component-card</span> (body: { partName, targetBoard, observations, photoLink, powerInfo })</div>
-    </div>
-  </section>
-
   <footer class="footer-note">
-    이 대시보드는 <span class="mono">.hermes/skills/component-integration-card/SKILL.md</span>의 카드 상태 모델과 일곱 구역 출력을 그대로 구현해 보여줍니다.
+    이 페이지는 <span class="mono">.hermes/skills/component-integration-card/SKILL.md</span>의 카드 상태 모델과 일곱 구역 출력을 그대로 구현해 보여줍니다.
     카드 상태: <span class="mono">PROVISIONAL / BLOCKED / VERIFIED</span>, 단계: <span class="mono">0/5 ~ 5/5</span>.
     계약 항목 근거: IC·캐리어 분리(항목 4), 출처 우선순위(항목 8), 절대 최대 정격/출처 충돌 5열 표(항목 9·10), 출력 계약(항목 2), 상태 모델(항목 7).
     아직 실제 부품은 연결·측정하지 않았으며, 카드 5/5는 전원 인가나 런타임 통합 시험 완료가 아닙니다.
+    현재는 시뮬레이션 모드이며, 실제 스킬 연동은 별도 연동이 필요합니다.
   </footer>
 </div>
 
@@ -401,49 +365,65 @@
 (function() {
   "use strict";
 
-  // ---------- 테마 ----------
-  var themeToggle = document.getElementById('themeToggle');
+  // ---------------- 테마 ----------------
   var themeIcon = document.getElementById('themeIcon');
   var html = document.documentElement;
 
   function applyTheme(theme) {
     html.setAttribute('data-theme', theme);
-    localStorage.setItem('mabc-theme', theme);
+    try { localStorage.setItem('mabc-mvp-theme', theme); } catch(e) {}
     themeIcon.textContent = theme === 'dark' ? '🌙' : '☀️';
   }
-  var saved = localStorage.getItem('mabc-theme');
-  if (saved === 'light' || saved === 'dark') {
-    applyTheme(saved);
+  var savedTheme = null;
+  try { savedTheme = localStorage.getItem('mabc-mvp-theme'); } catch(e) {}
+  if (savedTheme === 'light' || savedTheme === 'dark') {
+    applyTheme(savedTheme);
   } else {
-    applyTheme(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    applyTheme(prefersLight ? 'light' : 'dark');
   }
-  themeToggle.addEventListener('click', function() {
+  document.getElementById('themeToggle').addEventListener('click', function() {
     applyTheme(html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
   });
 
-  // ---------- 상태 모델 ----------
+  // ---------------- 토스트 ----------------
+  var toastEl = document.getElementById('toast');
+  var toastTimer = null;
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(function() { toastEl.classList.remove('show'); }, 2000);
+  }
+
+  // ---------------- 섹션 토글 ----------------
+  var sectionsEl = document.getElementById('sections');
+  sectionsEl.addEventListener('click', function(e) {
+    var head = e.target.closest('.section-head');
+    if (!head) return;
+    var section = head.parentElement;
+    var open = section.classList.toggle('open');
+    head.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  sectionsEl.addEventListener('keydown', function(e) {
+    var head = e.target.closest('.section-head');
+    if (!head) return;
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      var section = head.parentElement;
+      var open = section.classList.toggle('open');
+      head.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+  });
+
+  // ---------------- 카드 상태 모델 ----------------
   var STATE_BADGE_CLASS = {
     PROVISIONAL: 'provisional',
     BLOCKED: 'blocked',
     VERIFIED: 'verified'
   };
 
-  // ---------- 섹션 토글 ----------
-  document.querySelectorAll('.section-head').forEach(function(head) {
-    head.addEventListener('click', function() { toggleSection(head); });
-    head.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault(); toggleSection(head);
-      }
-    });
-  });
-  function toggleSection(head) {
-    var section = head.parentElement;
-    var open = section.classList.toggle('open');
-    head.setAttribute('aria-expanded', open ? 'true' : 'false');
-  }
-
-  // ---------- 폼 ----------
+  // ---------------- 폼 ----------------
   var form = document.getElementById('inputForm');
   var partName = document.getElementById('partName');
   var targetBoard = document.getElementById('targetBoard');
@@ -461,7 +441,7 @@
   });
   resetBtn.addEventListener('click', function() {
     form.reset();
-    updateFromForm(0, true);
+    updateFromForm(false);
     toast('입력이 초기화됐습니다.');
   });
   demoBtn.addEventListener('click', function() {
@@ -470,12 +450,17 @@
     observations.value = '파란색 보드. 칩에 MPU-6050 글자 보임. 핀 4개. I2C로 가속도/자이로 측정 목적. 3.3V 전원 사용 예정.';
     photoLink.value = '';
     powerInfo.value = '3.3V';
-    updateFromForm(0, true);
+    var resp = buildDemoResponse(true);
+    updateDisplay(resp, true);
     toast('데모용 예시 입력을 채웠습니다.');
   });
 
-  // ---------- 상태/출력 시뮬레이션 ----------
-  // 실제 연동 전에는 스킬 구조를 따르는 데모 응답을 생성한다.
+  function escapeHTML(s) {
+    return String(s).replace(/[&<>"']/g, function(c) {
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+
   function buildDemoResponse(filled) {
     if (!filled) {
       return {
@@ -497,55 +482,56 @@
       };
     }
 
-    var part = (partName.value || '').trim();
-    var board = (targetBoard.value || '').trim();
-    var obs = (observations.value || '').trim();
-    var link = (photoLink.value || '').trim();
-    var power = (powerInfo.value || '').trim();
+    var p = (partName.value || '').trim();
+    var b = (targetBoard.value || '').trim();
+    var o = (observations.value || '').trim();
+    var l = (photoLink.value || '').trim();
+    var pw = (powerInfo.value || '').trim();
 
     var sections = {};
 
-    // 관찰 사실: 사용자가 직접 말한 내용을 보존
+    // 관찰 사실
     var obsLines = [];
-    if (part) obsLines.push('- 부품/모듈: ' + part);
-    if (board) obsLines.push('- 타겟 보드: ' + board);
-    if (obs) obsLines.push('- 관찰 사실: ' + obs);
-    if (link) obsLines.push('- 링크: ' + link);
-    if (power) obsLines.push('- 전원 정보: ' + power);
+    if (p) obsLines.push('- 부품/모듈: ' + p);
+    if (b) obsLines.push('- 타겟 보드: ' + b);
+    if (o) obsLines.push('- 관찰 사실: ' + o);
+    if (l) obsLines.push('- 링크: ' + l);
+    if (pw) obsLines.push('- 전원 정보: ' + pw);
     if (obsLines.length === 0) obsLines.push('- 없음');
     sections.observations = obsLines.join('\n');
 
     // 식별 상태
-    var hasIC = /MPU-6050|GY-521|가속도|자이로|IMU/i.test(obs) || /MPU-6050|GY-521|IMU/i.test(part);
-    var hasMotor = /모터|진동|코인/i.test(obs) || /모터|진동|코인/i.test(part);
-    if (!part && !obs) {
+    var hasIC = /MPU-6050|GY-521|가속도|자이로|IMU/i.test(o) || /MPU-6050|GY-521|IMU/i.test(p);
+    var hasMotor = /모터|진동|코인/i.test(o) || /모터|진동|코인/i.test(p);
+
+    if (!p && !o) {
       sections.identify = '- PROVISIONAL\n- 관찰 사실 부족';
-    } else if (hasIC && board) {
-      sections.identify = '- PROVISIONAL\n- IC 후보: MPU-6050 (캐리어 GY-521와 분리 필요)\n- 타겟 보드 확인됨: ' + board;
+    } else if (hasIC && b) {
+      sections.identify = '- PROVISIONAL\n- IC 후보: MPU-6050 (캐리어 GY-521와 분리 필요)\n- 타겟 보드 확인됨: ' + b;
     } else if (hasMotor) {
-      sections.identify = '- PROVISIONAL\n- 코인 진동모터 추정 (표식/모델 미확정)\n- 타겟 보드 확인됨: ' + board;
+      sections.identify = '- PROVISIONAL\n- 코인 진동모터 추정 (표식/모델 미확정)\n- 타겟 보드 확인됨: ' + b;
     } else {
-      sections.identify = '- PROVISIONAL\n- 제공된 정보만으로는 IC·캐리어 특정 미흡\n- 타겟 보드 확인됨: ' + (board || '미입력');
+      sections.identify = '- PROVISIONAL\n- 제공된 정보만으로는 IC·캐리어 특정 미흡\n- 타겟 보드 확인됨: ' + (b || '미입력');
     }
 
     // 확인된 자료
-    if (link) {
-      sections.sources = '- 구매/사진 링크: ' + link + '\n  (판매 페이지는 외형·변형 확인 근거로만 사용, 전기 수치의 최종 근거로는 사용하지 않음)';
+    if (l) {
+      sections.sources = '- 구매/사진 링크: ' + l + '\n  (판매 페이지는 외형·변형 확인 근거로만 사용, 전기 수치의 최종 근거로는 사용하지 않음)';
     } else {
       sections.sources = '- 없음\n- 제조사 데이터시트·공식 제품 페이지 미확인';
     }
 
-    // 확인된 전기 조건 — 증거 수준 이상으로 만들지 않음
-    if (power) {
-      sections.electrical = '- 전원 정보(사용자 진술): ' + power + '\n- IC 동작 전압·모듈 입력 전압: 미확인\n- 로직 레벨·일반/피크 전류·대상 보드 공급 한계: 미확인\n- 절대 최대 정격을 권장 동작 조건으로 바꾸지 않음';
+    // 확인된 전기 조건
+    if (pw) {
+      sections.electrical = '- 전원 정보(사용자 진술): ' + pw + '\n- IC 동작 전압·모듈 입력 전압: 미확인\n- 로직 레벨·일반/피크 전류·대상 보드 공급 한계: 미확인\n- 절대 최대 정격을 권장 동작 조건으로 바꾸지 않음';
     } else {
       sections.electrical = '- 없음\n- 전원 정보가 없어 전기 호환성 판정 진입 전';
     }
 
     // 현재 차단 항목
-    if (!hasIC && !hasMotor && !part && !obs) {
+    if (!hasIC && !hasMotor && !p && !o) {
       sections.blocked = '- 없음';
-    } else if (!part || !board) {
+    } else if (!p || !b) {
       sections.blocked = '- 부품명 또는 타겟 보드가 미입력이면 최종 배선·전원 행동을 확정하지 않음';
     } else if (!hasIC) {
       sections.blocked = '- IC·캐리어 특정 전까지 모델별 전압·핀·직결 허용·전원 인가 행동 BLOCKED';
@@ -555,12 +541,12 @@
 
     // 지금 할 것 — 질문은 이 구역 안에서만, 최대 2개
     var nextItems = [];
-    if (!part || !obs) {
+    if (!p || !o) {
       nextItems.push('칩 글자와 핀 이름이 보이는 앞뒤 사진을 준비한다.');
-      if (!part && !obs) nextItems.push('가능하면 구매 링크나 제품명을 알려준다.');
+      if (!p && !o) nextItems.push('가능하면 구매 링크나 제품명을 알려준다.');
     } else if (!hasIC) {
       nextItems.push('정확한 IC·캐리어 식별을 위해 앞뒷면 사진, 표식, 구매 링크를 제공한다.');
-    } else if (!link) {
+    } else if (!l) {
       nextItems.push('제조사 데이터시트 또는 공식 제품 페이지를 확인한다.');
     } else {
       nextItems.push('출처 우선순위에 따라 공식 자료·구매 페이지를 대조한다.');
@@ -571,7 +557,7 @@
     sections.next = nextItems;
 
     // 카드 완성도
-    if (!part && !obs) {
+    if (!p && !o) {
       sections.completeness = '- PROVISIONAL';
     } else if (!hasIC) {
       sections.completeness = '- PROVISIONAL\n- 정확한 대상·리비전·적용 범위 부족';
@@ -580,12 +566,11 @@
     }
 
     var stage = 0;
-    var state = 'PROVISIONAL';
-    if (hasIC && board && link) { stage = 2; state = 'PROVISIONAL'; }
-    // 이 데모에서는 절대 VERIFIED까지 올리지 않는다. 실제 VERIFIED는 IC·캐리어·리비전·타겟·출처·핵심 주장 검증 + 미해결 게이트 0 필요.
+    if (hasIC && b && l) stage = 2;
+
     return {
       stage: stage,
-      state: state,
+      state: 'PROVISIONAL',
       stateLine: '[카드 ' + stage + '/5] ' + (
         stage === 0 ? '식별 근거 수집 중' :
         stage === 1 ? 'IC·캐리어·타겟 후보 분리' :
@@ -596,22 +581,6 @@
       sections: sections
     };
   }
-
-  // ---------- 화면 갱신 ----------
-  var stateBadge = document.getElementById('stateBadge');
-  var stateText = document.getElementById('stateText');
-  var modePill = document.getElementById('modePill');
-  var sectionEls = {
-    observations: document.getElementById('s-observations'),
-    identify: document.getElementById('s-identify'),
-    sources: document.getElementById('s-sources'),
-    electrical: document.getElementById('s-electrical'),
-    blocked: document.getElementById('s-blocked'),
-    next: document.getElementById('s-next'),
-    completeness: document.getElementById('s-completeness')
-  };
-
-  var currentResponse = null;
 
   function sectionHTML(lines) {
     if (typeof lines === 'string') {
@@ -625,17 +594,27 @@
     return '<p>- 없음</p>';
   }
 
-  function escapeHTML(s) {
-    return String(s).replace(/[&<>"']/g, function(c) {
-      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
-    });
-  }
+  var currentResponse = null;
+  var sectionEls = {
+    observations: document.getElementById('s-observations'),
+    identify: document.getElementById('s-identify'),
+    sources: document.getElementById('s-sources'),
+    electrical: document.getElementById('s-electrical'),
+    blocked: document.getElementById('s-blocked'),
+    next: document.getElementById('s-next'),
+    completeness: document.getElementById('s-completeness')
+  };
+  var stateBadge = document.getElementById('stateBadge');
+  var stateText = document.getElementById('stateText');
+  var modePill = document.getElementById('modePill');
 
   function updateDisplay(resp, filled) {
     currentResponse = resp;
     stateBadge.textContent = resp.stateLine;
     stateBadge.className = 'badge ' + (STATE_BADGE_CLASS[resp.state] || '');
-    stateText.textContent = (filled ? '관찰 사실이 반영됐습니다. 근거를 더 채우면 단계가 올라갈 수 있습니다.' : '식별 근거 수집 중 — 관찰 사실을 입력해 주세요.');
+    stateText.textContent = filled
+      ? '관찰 사실이 반영됐습니다. 근거를 더 채우면 단계가 올라갈 수 있습니다.'
+      : '식별 근거 수집 중 — 관찰 사실을 입력해 주세요.';
     modePill.innerHTML = '<span class="dot"></span> 시뮬레이션';
 
     sectionEls.observations.innerHTML = sectionHTML(resp.sections.observations);
@@ -646,50 +625,45 @@
     sectionEls.next.innerHTML = sectionHTML(resp.sections.next);
     sectionEls.completeness.innerHTML = sectionHTML(resp.sections.completeness);
 
-    // blocked가 있으면 해당 구역 태그 강조는 섹션 태그로 처리됨
-    inputHint.textContent = filled ?
-      '스킬의 일곱 구역 출력과 카드 상태 모델(PROVISIONAL/BLOCKED/VERIFIED)을 그대로 보여줍니다. 실제 연동 전에는 시뮬레이션 응답입니다.' :
-      '아직 관찰 사실이 없습니다. 아래 입력을 채워 반영하세요.';
+    inputHint.textContent = filled
+      ? '스킬의 일곱 구역 출력과 카드 상태 모델을 그대로 보여줍니다. 실제 연동 전에는 시뮬레이션 응답입니다.'
+      : '아직 관찰 사실이 없습니다. 아래 입력을 채워 반영하세요.';
   }
 
-  function updateFromForm(stage, filled) {
+  function updateFromForm(filled) {
     var resp = buildDemoResponse(filled);
     updateDisplay(resp, filled);
   }
 
   function submitObservation() {
     var filled = !!(partName.value.trim() || observations.value.trim() || targetBoard.value.trim());
-    updateFromForm(0, filled);
-    if (filled) {
-      toast('관찰 사실이 반영됐습니다.');
-    } else {
-      toast('관찰 사실 입력이 비어 있습니다.');
-    }
+    var resp = buildDemoResponse(filled);
+    updateDisplay(resp, filled);
+    if (filled) toast('관찰 사실이 반영됐습니다.');
+    else toast('관찰 사실 입력이 비어 있습니다.');
   }
 
-  // ---------- 카드 저장/목록 (로컬스토리지) ----------
-  var STORAGE_KEY = 'mabc-cards-v1';
-  var listContainer = document.getElementById('listContainer');
-  var saveBtn = document.getElementById('saveBtn');
-  var exportBtn = document.getElementById('exportBtn');
-  var clearBtn = document.getElementById('clearBtn');
-
+  // ---------------- 카드 저장 ----------------
+  var STORAGE_KEY = 'mabc-mvp-cards-v1';
   function getCards() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
       return raw ? JSON.parse(raw) : [];
-    } catch (e) { return []; }
+    } catch(e) { return []; }
   }
   function saveCards(cards) {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
-    } catch (e) { toast('저장 실패: 로컬스토리지가 가득 찼을 수 있습니다.'); }
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(cards)); } catch(e) { toast('저장 실패: 로컬스토리지가 가득 찼을 수 있습니다.'); }
   }
+
+  var listBody = document.getElementById('listBody');
+  var saveBtn = document.getElementById('saveBtn');
+  var exportBtn = document.getElementById('exportBtn');
+  var clearBtn = document.getElementById('clearBtn');
 
   function renderList() {
     var cards = getCards();
     if (cards.length === 0) {
-      listContainer.innerHTML = '<p class="list-empty">저장된 카드가 없습니다. 관찰 사실을 반영한 뒤 저장해 주세요.</p>';
+      listBody.innerHTML = '<p class="list-empty">저장된 카드가 없습니다. 관찰 사실을 반영한 뒤 저장해 주세요.</p>';
       return;
     }
     var html = '<table class="list"><thead><tr><th>카드</th><th>단계</th><th>상태</th><th>저장한 시각</th><th></th></tr></thead><tbody>';
@@ -700,14 +674,14 @@
       html += '<tr>'
         + '<td><span class="mono">' + escapeHTML(c.partName || '( unnamed )') + '</span></td>'
         + '<td><span class="mono">' + (c.stage != null ? c.stage + '/5' : '-') + '</span></td>'
-        + '<td><span class="badge ' + stClass + '" style="font-size:0.75rem;">' + escapeHTML(c.state) + '</span></td>'
+        + '<td><span class="badge ' + stClass + '">' + escapeHTML(c.state) + '</span></td>'
         + '<td>' + escapeHTML(ts) + '</td>'
-        + '<td><button type="button" class="secondary" data-load="' + i + '" style="padding:4px 8px;font-size:0.8rem;">불러오기</button></td>'
+        + '<td><button type="button" class="secondary" data-load="' + i + '" style="padding:2px 6px;font-size:0.72rem;">불러오기</button></td>'
         + '</tr>';
     }
     html += '</tbody></table>';
-    listContainer.innerHTML = html;
-    listContainer.querySelectorAll('[data-load]').forEach(function(btn) {
+    listBody.innerHTML = html;
+    listBody.querySelectorAll('[data-load]').forEach(function(btn) {
       btn.addEventListener('click', function() {
         var idx = parseInt(btn.getAttribute('data-load'), 10);
         loadCard(idx);
@@ -719,37 +693,31 @@
     var cards = getCards();
     if (idx < 0 || idx >= cards.length) return;
     var c = cards[idx];
-    if (c.partName) partName.value = c.partName;
-    if (c.targetBoard) targetBoard.value = c.targetBoard;
-    if (c.observations) observations.value = c.observations;
-    if (c.photoLink) photoLink.value = c.photoLink;
-    if (c.powerInfo) powerInfo.value = c.powerInfo;
-    // 저장된 카드의 당시 상태를 재현하려면 그 시점의 응답을 다시 만들어야 한다.
-    // 저장된 응답 스냅샷이 있으면 그것을, 없으면 입력으로 재구성한다.
+    partName.value = c.partName || '';
+    targetBoard.value = c.targetBoard || '';
+    observations.value = c.observations || '';
+    photoLink.value = c.photoLink || '';
+    powerInfo.value = c.powerInfo || '';
     if (c.response) {
       updateDisplay(c.response, true);
     } else {
-      updateFromForm(0, true);
+      updateFromForm(true);
     }
     toast('선택한 카드를 불러왔습니다.');
   }
 
   saveBtn.addEventListener('click', function() {
-    var resp = currentResponse;
-    if (!resp) {
-      toast('먼저 관찰 사실을 반영해 주세요.');
-      return;
-    }
+    if (!currentResponse) { toast('먼저 관찰 사실을 반영해 주세요.'); return; }
     var card = {
       partName: partName.value.trim(),
       targetBoard: targetBoard.value.trim(),
       observations: observations.value.trim(),
       photoLink: photoLink.value.trim(),
       powerInfo: powerInfo.value.trim(),
-      stage: resp.stage,
-      state: resp.state,
-      stateLine: resp.stateLine,
-      response: resp,
+      stage: currentResponse.stage,
+      state: currentResponse.state,
+      stateLine: currentResponse.stateLine,
+      response: currentResponse,
       savedAt: Date.now()
     };
     var cards = getCards();
@@ -761,15 +729,14 @@
 
   exportBtn.addEventListener('click', function() {
     var cards = getCards();
-    if (cards.length === 0) {
-      toast('내보낼 카드가 없습니다.');
-      return;
-    }
+    if (cards.length === 0) { toast('내보낼 카드가 없습니다.'); return; }
     var blob = new Blob([JSON.stringify(cards, null, 2)], { type: 'application/json' });
     var url = URL.createObjectURL(blob);
     var a = document.createElement('a');
-    a.href = url; a.download = 'mabc-cards-' + new Date().toISOString().slice(0,10) + '.json';
-    document.body.appendChild(a); a.click();
+    a.href = url;
+    a.download = 'mabc-cards-' + new Date().toISOString().slice(0,10) + '.json';
+    document.body.appendChild(a);
+    a.click();
     document.body.removeChild(a);
     setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
     toast('카드를 JSON으로 내보냈습니다.');
@@ -778,45 +745,13 @@
   clearBtn.addEventListener('click', function() {
     if (getCards().length === 0) { toast('삭제할 카드가 없습니다.'); return; }
     if (!confirm('저장된 카드를 모두 삭제하시겠습니까?')) return;
-    localStorage.removeItem(STORAGE_KEY);
+    try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
     renderList();
     toast('카드 목록을 모두 삭제했습니다.');
   });
 
-  // ---------- 모드 전환 ----------
-  var radios = document.querySelectorAll('input[name="mode"]');
-  radios.forEach(function(r) {
-    r.addEventListener('change', function() {
-      var mode = document.querySelector('input[name="mode"]:checked').value;
-      if (mode === 'sim') {
-        modePill.innerHTML = '<span class="dot"></span> 시뮬레이션';
-        document.getElementById('connectHint').innerHTML =
-          '현재는 <span class="mono">시뮬레이션</span> 모드입니다. 스킬의 출력 구조(카드 상태 모델 + 일곱 구역)를 그대로 보여주는 데모 응답을 생성합니다.' +
-          '<div style="margin-top:8px;">자리 표시 엔드포인트: <span class="mono">POST /api/component-card</span> (body: { partName, targetBoard, observations, photoLink, powerInfo })</div>';
-      } else {
-        modePill.innerHTML = '<span class="dot"></span> 연동 준비 필요';
-        document.getElementById('connectHint').innerHTML =
-          '<span class="mono">실제 스킬 연동</span> 모드를 선택했지만 아직 연동되지 않았습니다. ' +
-          '지금 선택해도 동작은 시뮬레이션과 같습니다. 연동 시에는 <span class="mono">POST /api/component-card</span> 로 관찰 사실을 보내고 스킬 응답을 받아 일곱 구역을 채웁니다.';
-      }
-      toast('모드가 ' + (mode === 'sim' ? '시뮬레이션' : '연동 준비 필요') + '으로 바뀌었습니다.');
-    });
-  });
-
-  // ---------- 토스트 ----------
-  var toastEl = document.getElementById('toast');
-  var toastTimer = null;
-  function toast(msg) {
-    toastEl.textContent = msg;
-    toastEl.classList.add('show');
-    if (toastTimer) clearTimeout(toastTimer);
-    toastTimer = setTimeout(function() {
-      toastEl.classList.remove('show');
-    }, 2200);
-  }
-
-  // ---------- 초기 렌더링 ----------
-  updateFromForm(0, false);
+  // ---------------- 시작 ----------------
+  updateFromForm(false);
   renderList();
 })();
 </script>
