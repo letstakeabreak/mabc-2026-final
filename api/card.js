@@ -3,7 +3,8 @@
 // 프론트에서 직접 Upstage API를 호출하지 않도록 프록시 역할을 한다.
 // API 키는 서버 환경변수(UPSTAGE_API_KEY)로만 읽고 클라이언트에 노출하지 않는다.
 
-import fs from 'fs';
+import {loadEnvFile} from 'node:process';
+try { loadEnvFile('.env'); } catch (e) { console.warn('api/card: .env 로드 실패 (로컬 테스트 시 .env 파일 확인)'); }
 import path from 'path';
 
 export default async function handler(req, res) {
