@@ -15,5 +15,5 @@ dist/
 # 다른 스킬
 _ref/
 
-# 대화 기록 프롬프트
-mabc_final_used_prompt.txt
+# 백업본
+.hermes/skills/component-integration-card/SKILL.md.bak
