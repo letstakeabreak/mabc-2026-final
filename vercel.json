@@ -1,0 +1,12 @@
+{
+  "public": "public",
+  "functions": {
+    "api/card.js": {
+      "includeFiles": ".hermes/skills/component-integration-card/**/*"
+    }
+  },
+  "rewrites": [
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/api/card", "destination": "/api/card.js" }
+  ]
+}

@@ -17,3 +17,5 @@ _ref/
 
 # 백업본
 .hermes/skills/component-integration-card/SKILL.md.bak
+.vercel
+.env*
