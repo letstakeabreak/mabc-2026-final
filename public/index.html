@@ -949,10 +949,10 @@
   
 
   // ---------------- 입력 폼 상태 반영 ----------------
-  function updateFromForm(filled) {
+  function updateFromForm(filled, source) {
     // 현재는 /api/card 연동 전이므로, buildDemoResponse를 사용합니다.
     var resp = buildDemoResponse(filled);
-    updateDisplay(resp, filled);
+    updateDisplay(resp, filled, source || (filled ? 'demo' : undefined));
   }
 
 }
@@ -1014,7 +1014,7 @@
     photoLink.value = c.photoLink || '';
     powerInfo.value = c.powerInfo || '';
     if (c.response) {
-      updateDisplay(c.response, true);
+      updateDisplay(c.response, true, 'api');
     } else {
       updateFromForm(true);
     }
