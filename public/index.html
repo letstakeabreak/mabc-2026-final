@@ -246,6 +246,70 @@
     text-transform: uppercase; letter-spacing: 0.03em;
     margin: 6px 0 3px; padding-bottom: 2px; border-bottom: 1px solid var(--border);
   }
+
+  /* ---- 전기 호환성 게이트 전용 스타일 ---- */
+  .subhead {
+    font-size: 0.72rem; font-weight: 600; color: var(--text-soft);
+    text-transform: uppercase; letter-spacing: 0.03em;
+    margin: 8px 0 3px; padding-bottom: 2px; border-bottom: 1px solid var(--border);
+  }
+  .gate-list {
+    margin: 0 0 4px; padding-left: 14px;
+    list-style: none;
+  }
+  .gate-list li {
+    margin-bottom: 4px; padding: 5px 6px;
+    border: 1px solid var(--border); border-radius: 4px;
+    background: var(--surface); font-size: 0.8rem;
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px;
+  }
+  .gate-item .badge {
+    flex-shrink: 0;
+  }
+  .gate-claim {
+    flex: 1 1 auto; min-width: 120px;
+  }
+  .gate-evidence {
+    flex: 1 1 auto; min-width: 120px;
+    color: var(--text-soft); font-size: 0.75rem;
+  }
+  .gate-principle {
+    margin-top: 8px; padding: 6px 8px;
+    border: 1px dashed var(--border); border-radius: 4px;
+    background: var(--surface-2); font-size: 0.72rem;
+  }
+  .principle-title {
+    font-weight: 600; color: var(--text-soft); text-transform: uppercase;
+    letter-spacing: 0.03em; display: block; margin-bottom: 3px;
+  }
+  .principle-list {
+    margin: 0; padding-left: 14px;
+  }
+  .principle-list li {
+    margin-bottom: 2px; color: var(--text-soft);
+  }
+  .conflict-table {
+    width: 100%; border-collapse: collapse; font-size: 0.75rem;
+    margin: 4px 0;
+  }
+  .conflict-table th, .conflict-table td {
+    text-align: left; padding: 4px 5px;
+    border: 1px solid var(--border); vertical-align: top;
+  }
+  .conflict-table th {
+    color: var(--text-soft); font-weight: 600;
+    background: var(--surface-2); font-size: 0.68rem;
+    text-transform: uppercase; letter-spacing: 0.03em;
+  }
+  .conflict-table td {
+    word-break: break-word;
+  }
+  .badge.calc {
+    color: var(--accent); border-color: var(--accent); background: var(--accent-soft);
+  }
+  [data-theme="dark"] .badge.calc {
+    background: #1c2c4a; border-color: var(--accent); color: var(--accent);
+  }
 </style>
 </head>
 <body>
@@ -587,9 +651,21 @@
           '확인된 자료': [
             '- 없음',
           ],
-          '확인된 전기 조건': [
-            '- 없음',
-          ],
+          '확인된 전기 조건': {
+            items: [
+              { gate: '모듈 입력 전압 (VIN/캐리어 입력)', status: 'unconfirmed', evidence: '모듈 VIN·캐리어 입력 전압 범위를 출처에서 분리 확인하지 않음' },
+              { gate: 'IC 동작 전압 (절대 최대 정격과 구분)', status: 'unconfirmed', evidence: 'MPU-6050 IC 동작 전압 범위를 제조사 자료에서 확인하지 않음' },
+              { gate: '로직 레벨 (GPIO HIGH/LOW, 3.3V vs 5V)', status: 'unconfirmed', evidence: '출입력 신호 전압 레벨과 타겟 보드 GPIO 레벨 대조 필요' },
+              { gate: '일반 소비 전류', status: 'unconfirmed', evidence: '정상 동작 시 통상 소비 전류 출처 미확인' },
+              { gate: '최대·피크 소비 전류', status: 'unconfirmed', evidence: '순간 피크/최대 소비 전류 출처 미확인, 부하에 따라 달라짐' },
+              { gate: '대상 보드 공급 한계 (GPIO/레일 전류)', status: 'unconfirmed', evidence: 'ESP32 GPIO/레일 공급 한계 미확인' },
+              { gate: '전원/GND 경로 (공통 그라운드 여부)', status: 'unconfirmed', evidence: '전원 인가 경로와 그라운드 공통 여부 미확인' },
+              { gate: '직결/레벨 변환/보호 필요 여부', status: 'unconfirmed', evidence: '레벨 시프터·보호 소자(저항/클램프/역전류 방지) 필요 여부 미확인' },
+              { gate: '극성·핀 방향 (VCC/GND 극성, 핀 배치 방향)', status: 'unconfirmed', evidence: 'VCC/GND 극성 및 핀 배치 방향 미확인 — 전원 인가 전 확인 필요' },
+              { gate: '버스 게이트 (I2C 주소, 풀업, 버스 전압, 다중 장치)', status: 'unconfirmed', evidence: 'I2C address·풀업 저항·버스 전압·다중 장치 사용 여부 미확인' },
+            ],
+            conflicts: [],
+          },
           '현재 차단 항목': [
             '- 없음',
           ],
@@ -618,9 +694,21 @@
           '확인된 자료': [
             '- 없음',
           ],
-          '확인된 전기 조건': [
-            '- 없음',
-          ],
+          '확인된 전기 조건': {
+            items: [
+              { gate: '모듈 입력 전압 (VIN/캐리어 입력)', status: 'unconfirmed', evidence: '모듈 VIN·캐리어 입력 전압 범위를 출처에서 분리 확인하지 않음' },
+              { gate: 'IC 동작 전압 (절대 최대 정격과 구분)', status: 'unconfirmed', evidence: 'MPU-6050 IC 동작 전압 범위를 제조사 자료에서 확인하지 않음' },
+              { gate: '로직 레벨 (GPIO HIGH/LOW, 3.3V vs 5V)', status: 'unconfirmed', evidence: '출입력 신호 전압 레벨과 타겟 보드 GPIO 레벨 대조 필요' },
+              { gate: '일반 소비 전류', status: 'unconfirmed', evidence: '정상 동작 시 통상 소비 전류 출처 미확인' },
+              { gate: '최대·피크 소비 전류', status: 'unconfirmed', evidence: '순간 피크/최대 소비 전류 출처 미확인, 부하에 따라 달라짐' },
+              { gate: '대상 보드 공급 한계 (GPIO/레일 전류)', status: 'unconfirmed', evidence: 'ESP32 GPIO/레일 공급 한계 미확인' },
+              { gate: '전원/GND 경로 (공통 그라운드 여부)', status: 'unconfirmed', evidence: '전원 인가 경로와 그라운드 공통 여부 미확인' },
+              { gate: '직결/레벨 변환/보호 필요 여부', status: 'unconfirmed', evidence: '레벨 시프터·보호 소자(저항/클램프/역전류 방지) 필요 여부 미확인' },
+              { gate: '극성·핀 방향 (VCC/GND 극성, 핀 배치 방향)', status: 'unconfirmed', evidence: 'VCC/GND 극성 및 핀 배치 방향 미확인 — 전원 인가 전 확인 필요' },
+              { gate: '버스 게이트 (I2C 주소, 풀업, 버스 전압, 다중 장치)', status: 'unconfirmed', evidence: 'I2C address·풀업 저항·버스 전압·다중 장치 사용 여부 미확인' },
+            ],
+            conflicts: [],
+          },
           '현재 차단 항목': [
             '- 없음',
           ],
@@ -926,7 +1014,7 @@
     sectionEls.observations.innerHTML = sectionHTML(resp.sections.observations);
     sectionEls.identify.innerHTML = sectionHTML(resp.sections.identify);
     sectionEls.sources.innerHTML = sectionHTML(resp.sections.sources);
-    sectionEls.electrical.innerHTML = sectionHTML(resp.sections.electrical);
+    sectionEls.electrical.innerHTML = electricalHTML(resp.sections.electrical);
     sectionEls.blocked.innerHTML = sectionHTML(resp.sections.blocked);
     sectionEls.next.innerHTML = sectionHTML(resp.sections.next);
     sectionEls.completeness.innerHTML = sectionHTML(resp.sections.completeness);
@@ -934,6 +1022,90 @@
     inputHint.textContent = filled
       ? '스킬의 일곱 구역 출력과 카드 상태 모델을 그대로 보여줍니다. 실제 연동 전에는 시뮬레이션 응답입니다.'
       : '아직 관찰 사실이 없습니다. 아래 입력을 채워 반영하세요.';
+  }
+
+  // ---------------- 전기 조건 구역 전용 렌더러 ----------------
+  function electricalStatusClass(status) {
+    if (status === 'verified') return 'verified';
+    if (status === 'blocked') return 'blocked';
+    if (status === 'calc') return 'calc';
+    return 'unconfirmed';
+  }
+
+  function parseElectricalLines(text) {
+    // 텍스트 형식("- 게이트명: 내용" 또는 "- 게이트명")을 items 배열로 변환
+    if (typeof text !== 'string') return null;
+    var lines = text.split('\n');
+    var items = [];
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i].trim();
+      if (!line || line === '- 없음') continue;
+      var colonIdx = line.indexOf(':');
+      var gate, evidence;
+      if (colonIdx > 0) {
+        gate = line.substring(1, colonIdx).trim();
+        evidence = line.substring(colonIdx + 1).trim();
+      } else {
+        gate = line.substring(1).trim();
+        evidence = '';
+      }
+      if (gate) {
+        var status = 'unconfirmed';
+        var lower = (gate + ' ' + evidence).toLowerCase();
+        if (/verified|확인|확정/i.test(lower)) status = 'verified';
+        else if (/blocked|차단|불가/i.test(lower)) status = 'blocked';
+        else if (/계산|추정|가정/i.test(lower)) status = 'calc';
+        items.push({ gate: gate, status: status, evidence: evidence });
+      }
+    }
+    return items.length > 0 ? items : null;
+  }
+
+  function electricalHTML(sec) {
+    if (typeof sec === 'string' || Array.isArray(sec)) {
+      var parsed = parseElectricalLines(typeof sec === 'string' ? sec : sec.join('\n'));
+      if (parsed) sec = { items: parsed, conflicts: [] };
+      else return sectionHTML(sec);
+    }
+    if (sec && typeof sec === 'object' && !Array.isArray(sec)) {
+      var out = '';
+      var items = sec.items || [];
+      var conflicts = sec.conflicts || [];
+      if (items.length === 0 && conflicts.length === 0) {
+        return '<p>- 없음</p>';
+      }
+      if (items.length > 0) {
+        out += '<div class="subhead">전기 호환성 게이트 항목</div>';
+        out += '<ul class="gate-list">';
+        items.forEach(function(item) {
+          var cls = electricalStatusClass(item.status);
+          var label = { verified: 'VERIFIED', blocked: 'BLOCKED', calc: '계산', unconfirmed: '미확인' }[item.status] || item.status;
+          out += '<li class="gate-item">';
+          out += '<span class="badge ' + cls + '">' + escapeHTML(label) + '</span>';
+          out += '<span class="gate-claim">' + escapeHTML(item.gate || item.claim || '') + '</span>';
+          if (item.evidence) out += '<span class="gate-evidence">— ' + escapeHTML(item.evidence) + '</span>';
+          out += '</li>';
+        });
+        out += '</ul>';
+      }
+      if (conflicts && conflicts.length > 0) {
+        out += '<div class="subhead">출처 충돌</div>';
+        out += '<table class="conflict-table"><thead><tr><th>출처</th><th>주장</th><th>대상</th><th>충돌</th><th>해제 조건</th></tr></thead><tbody>';
+        conflicts.forEach(function(c) {
+          out += '<tr><td>' + escapeHTML(c.source || '-') + '</td><td>' + escapeHTML(c.claim || '-') + '</td><td>' + escapeHTML(c.target || '-') + '</td><td>' + escapeHTML(c.conflict || '-') + '</td><td>' + escapeHTML(c.unblock || '-') + '</td></tr>';
+        });
+        out += '</tbody></table>';
+      }
+      out += '<div class="gate-principle">';
+      out += '<span class="principle-title">판정 원칙 (요약)</span>';
+      out += '<ul class="principle-list">';
+      out += '<li>IC 데이터시트로 캐리어의 VIN·레귤레이터·레벨 시프터·핀 배치를 확정하지 않습니다.</li>';
+      out += '<li>판매 페이지의 5V 가능 문구로 IC absolute maximum 3.6V 충돌을 자동 해소하지 않습니다.</li>';
+      out += '<li>확인된 값만 기준으로 판정하며, 근거 없거나 변형에 따라 달라지는 값은 미확인으로 남깁니다.</li>';
+      out += '</ul></div>';
+      return out;
+    }
+    return '<p>- 없음</p>';
   }
 
   function sectionHTML(lines) {
