@@ -480,6 +480,8 @@
         msg = '요청 형식이 올바르지 않습니다.';
       } else if (err.error === 'method_not_allowed') {
         msg = '요청 방법이 올바르지 않습니다.';
+      } else if (err.error === 'upstage_request_failed') {
+        msg = '요청 전송에 실패했습니다. 네트워크 상태를 확인하고 다시 시도해 주세요.';
       } else {
         msg = '외부 스킬 호출에 실패했습니다. 잠시 후 다시 시도해 주세요.';
       }
@@ -522,10 +524,14 @@
         return;
       }
 
-      updateDisplay(parsed, true);
+      updateDisplay(parsed, true, 'api');
       toast('스킬 호출 결과가 반영됐습니다.');
     } catch (err) {
       handleApiError({ error: 'upstage_request_failed' });
+      // 실제 호출 불가 시 예시 응답으로 폴백
+      var demo = buildDemoResponse(true);
+      updateDisplay(demo, true, 'demo');
+      inputHint.textContent = '실제 스킬 호출이 불가하여 예시 응답을 표시했습니다. 이는 실제 판정 결과가 아니라 예시입니다.';
     } finally {
       submitBtn.disabled = false;
       submitBtn.textContent = '관찰 사실 반영';
@@ -543,14 +549,91 @@
     photoLink.value = '';
     powerInfo.value = '3.3V';
     var resp = buildDemoResponse(true);
-    updateDisplay(resp, true);
-    toast('"예시로 해보기의 시나리오 B 고정 카드"가 채워졌습니다. 이는 실제 판정 결과가 아니라 예시입니다.');
+    updateDisplay(resp, true, 'demo');
+    toast('예시로 해보기의 시나리오 B 고정 카드"가 채워졌습니다. 이는 실제 판정 결과가 아니라 예시입니다.');
   });
 
   function escapeHTML(s) {
     return String(s).replace(/[&<>"']/g, function(c) {
       return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
     });
+  }
+
+  // ---------------- 예시 응답 (buildDemoResponse) ----------------
+  // "예시로 해보기를 눌러보기"와 빈 입력 상태의 폴백에 사용한다.
+  // 실제 판정이 아니라 예시이며, SKILL.md 카드 출력 구조의 모양만 보여준다.
+
+  function buildDemoResponse(filled) {
+    if (filled) {
+      return {
+        ok: true,
+        stage: 1,
+        state: 'PROVISIONAL',
+        stateLine: '[카드 1/5] IC·캐리어·타겟 후보 분리',
+        sections: {
+          '관찰 사실': [
+            '부품/모듈 이름: GY-521 (MPU-6050 IC 포함 모듈)',
+            '타겟 보드: ESP32 30핀 개발보드',
+            '관찰 사실: 파란색 보드. 칩에 MPU-6050 글자 보임. 핀 4개. I2C로 가속도/자이로 측정 목적. 3.3V 전원 사용 예정.',
+            '사진/구매 링크: 없음',
+            '사용 전원/전압: 3.3V',
+          ],
+          '식별 상태': [
+            '- IC: MPU-6050 (관찰된 글자로는 후보 수준, 제조사·리비전 미확인)',
+            '- 캐리어/모듈: GY-521 (MPU-6050이 들어간 파란색 브레이크아웃 모듈로 보임, 리비전 미확인)',
+            '- 타겟 보드: ESP32 30핀 개발보드 (ESP32-WROOM-32 탑재 모듈로 추정, 정확한 탑재 모듈·전원 레일 미확인)',
+            '- 상태: PROVISIONAL',
+          ],
+          '확인된 자료': [
+            '- 없음',
+          ],
+          '확인된 전기 조건': [
+            '- 없음',
+          ],
+          '현재 차단 항목': [
+            '- 없음',
+          ],
+          '지금 할 것': [
+            '- 칩 글자와 핀 이름이 보이는 앞뒤 사진을 준비한다.',
+            '- 구매 링크나 정확한 제품명을 알려준다.',
+          ],
+          '카드 완성도': [
+            '- PROVISIONAL',
+          ],
+        },
+      };
+    } else {
+      return {
+        ok: true,
+        stage: 0,
+        state: 'PROVISIONAL',
+        stateLine: '[카드 0/5] 식별 근거 수집 중',
+        sections: {
+          '관찰 사실': [
+            '- 없음',
+          ],
+          '식별 상태': [
+            '- PROVISIONAL',
+          ],
+          '확인된 자료': [
+            '- 없음',
+          ],
+          '확인된 전기 조건': [
+            '- 없음',
+          ],
+          '현재 차단 항목': [
+            '- 없음',
+          ],
+          '지금 할 것': [
+            '- 칩 글자와 핀 이름이 보이는 앞뒤 사진을 준비한다.',
+            '- 구매 링크나 제품명을 알려준다.',
+          ],
+          '카드 완성도': [
+            '- PROVISIONAL',
+          ],
+        },
+      };
+    }
   }
 
   // ---------------- 카드 상태 모델 ----------------
@@ -823,14 +906,22 @@
   var stateText = document.getElementById('stateText');
   var modePill = document.getElementById('modePill');
 
-  function updateDisplay(resp, filled) {
+  function updateDisplay(resp, filled, source) {
     currentResponse = resp;
     stateBadge.textContent = resp.stateLine;
     stateBadge.className = 'badge ' + (STATE_BADGE_CLASS[resp.state] || '');
-    stateText.textContent = filled
-      ? '관찰 사실이 반영됐습니다. 근거를 더 채우면 단계가 올라갈 수 있습니다.'
-      : '식별 근거 수집 중 — 관찰 사실을 입력해 주세요.';
-    modePill.innerHTML = '<span class="dot"></span> 시뮬레이션';
+    if (source === 'api') {
+      stateText.textContent = '스킬 호출 결과가 반영됐습니다. 실제 판정 결과입니다.';
+      modePill.innerHTML = '<span class="dot"></span> 실제 응답';
+    } else if (source === 'demo') {
+      stateText.textContent = '예시 시나리오 응답이 채워졌습니다. 이는 실제 판정 결과가 아니라 예시입니다.';
+      modePill.innerHTML = '<span class="dot"></span> 시뮬레이션 (예시)';
+    } else {
+      stateText.textContent = filled
+        ? '관찰 사실이 반영됐습니다. 근거를 더 채우면 단계가 올라갈 수 있습니다.'
+        : '식별 근거 수집 중 — 관찰 사실을 입력해 주세요.';
+      modePill.innerHTML = '<span class="dot"></span> 시뮬레이션';
+    }
 
     sectionEls.observations.innerHTML = sectionHTML(resp.sections.observations);
     sectionEls.identify.innerHTML = sectionHTML(resp.sections.identify);
