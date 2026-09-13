@@ -3,11 +3,13 @@
 // 프론트에서 직접 Upstage API를 호출하지 않도록 프록시 역할을 한다.
 // API 키는 서버 환경변수(UPSTAGE_API_KEY)로만 읽고 클라이언트에 노출하지 않는다.
 
-import {loadEnvFile} from 'node:process';
-try { loadEnvFile('.env'); } catch (e) { console.warn('api/card: .env 로드 실패 (로컬 테스트 시 .env 파일 확인)'); }
+import fs from 'fs';
 import path from 'path';
 
 export default async function handler(req, res) {
+  try { process.loadEnvFile('.env'); } catch (e) {
+    console.warn('api/card: .env 로드 실패 (로컬 테스트 시 .env 파일 확인)');
+  }
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'method_not_allowed' });
   }
@@ -25,15 +27,32 @@ export default async function handler(req, res) {
 
   const { partName, targetBoard, observations, photoLink, powerInfo } = body;
 
-  // SKILL.md 원문을 그대로 system 메시지로 사용
-  const skillPath = path.resolve(process.cwd(), '.hermes/skills/component-integration-card/SKILL.md');
-  let systemPrompt;
+  // SKILL.md 원문 + references/ 단계별 규칙을 모두 읽어서 system 프롬프트로 사용
+  // SKILL.md 자체는 수정하지 않고, 여기서 읽어 병합만 한다.
+  const skillDir = path.resolve(process.cwd(), '.hermes/skills/component-integration-card');
+  const skillPath = path.join(skillDir, 'SKILL.md');
+  const refPaths = [
+    'source-evidence-rules.md',
+    'electrical-compatibility-gates.md',
+    'component-card-template.md',
+  ];
+  const systemParts = [];
   try {
-    systemPrompt = fs.readFileSync(skillPath, 'utf-8');
+    systemParts.push(fs.readFileSync(skillPath, 'utf-8'));
   } catch (e) {
     console.error('api/card: SKILL.md 읽기 실패', e);
     return res.status(500).json({ error: 'skill_md_read_failed' });
   }
+  for (const name of refPaths) {
+    const refPath = path.join(skillDir, 'references', name);
+    try {
+      const text = fs.readFileSync(refPath, 'utf-8');
+      systemParts.push(`\n\n\n===== references/${name} =====\n\n${text}`);
+    } catch (e) {
+      console.warn(`api/card: references/${name} 읽기 실패`, e);
+    }
+  }
+  const systemPrompt = systemParts.join('\n');
 
   const userContent = [
     `부품/모듈 이름: ${partName || ''}`,
@@ -41,7 +60,7 @@ export default async function handler(req, res) {
     `관찰 사실: ${observations || ''}`,
     `사진/구매 링크: ${photoLink || ''}`,
     `사용 전원/전압: ${powerInfo || ''}`,
-  ].filter(Boolean).join('\n');
+  ].filter(Boolean).join('\\n');
 
   const payload = {
     model: 'solar-pro4',
