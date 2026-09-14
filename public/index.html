@@ -920,7 +920,7 @@
       var trimmed = line.trim();
 
       // 구역 제목 줄: [구역 이름] 형태
-      var titleMatch = trimmed.match(/^\[(\w+)\]$/);
+      var titleMatch = trimmed.match(/^\[([^\]]+)\]$/);
       if (titleMatch) {
         var name = titleMatch[1];
         if (sectionOrder.indexOf(name) !== -1) {

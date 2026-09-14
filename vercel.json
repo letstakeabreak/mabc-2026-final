@@ -1,5 +1,4 @@
 {
-  "public": "public",
   "functions": {
     "api/card.js": {
       "includeFiles": ".hermes/skills/component-integration-card/**/*"

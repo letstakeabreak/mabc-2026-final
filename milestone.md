@@ -20,6 +20,19 @@
 
 ## 마일스톤
 
+### ui-design-research-and-plan (신규)
+의도: 서비스가 향하는 목적에 맞는 UI/UX 디자인 방향을 인터넷과 근거 자료로 정리하고, 장점만 추려 실행 계획으로 남긴다.
+
+작업
+- 1단계: 해당 서비스의 목적에 맞는 디자인의 필수 요소를 인터넷에서 충분히 리서치
+- 2단계: 리서치 결과를 design_research.md로 정리 (디자인 요소·특징, UI/UX)
+- 3단계: design_research.md의 장점만 뽑아서 design_plan.md에 UI/UX 디자인 계획 정리
+
+검증
+- design_research.md가 서비스의 목적·사용자·맥락을 반영한 근거를 포함하는지 확인
+- design_plan.md가 research의 장점만을 추상화해 실행 가능한 항목으로 정리했는지 확인
+- 두 파일이 milestone.md와 같은 루트에 존재하는지 확인
+
 ### ui-m1-card-state-model-ui (현재)
 의도: 카드 상태 모델(0/5~5/5, PROVISIONAL/BLOCKED/VERIFIED)과 7구역 출력 계약이 화면에서 의도대로 보이게 한다.
 

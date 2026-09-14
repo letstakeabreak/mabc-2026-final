@@ -9,7 +9,7 @@ import { pathToFileURL, fileURLToPath } from 'node:url';
 
 import handler from '../api/card.js';
 
-const WEB_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../public');
+const WEB_ROOT = '/Users/miro/Developer/MABC_Final/public';
 
 try { process.loadEnvFile('.env'); } catch (e) { console.warn('mabc-dev-server: .env 로드 실패'); }
 
@@ -70,7 +70,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // 정적 파일 서빙
-  let filePath = pathname === '/' ? path.join(WEB_ROOT, 'dashboard.html') : path.join(WEB_ROOT, pathname);
+  let filePath = pathname === '/' ? path.join(WEB_ROOT, 'index.html') : path.join(WEB_ROOT, pathname);
   const ext = path.extname(filePath).toLowerCase();
   const mime = {
     '.html': 'text/html; charset=utf-8',
