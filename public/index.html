@@ -697,7 +697,7 @@
           <span class="status-text" id="stateText">식별 근거 수집 중 — 관찰 사실을 입력해 주세요.</span>
           <span class="spacer"></span>
           <span class="prereq" id="stagePrereq"></span>
-          <span class="pill" id="modePill"><span class="dot"></span> 시뮬레이션</span>
+          <span class="pill" id="modePill"><span class="dot"></span> 시뮬레이션(예시)</span>
         </div>
 
         <form id="inputForm" novalidate>
@@ -734,7 +734,7 @@
             <button type="submit" id="submitBtn" class="primary">관찰 사실 반영</button>
             <button type="button" class="secondary" id="newAnalysisBtn">새로 분석하기 — 입력·출력 초기화</button>
           </div>
-          <div class="hint" id="inputHint">예시로 해보기는 고정된 시나리오(예시)입니다. 실제 입력에 대한 판정과 응답은 아직 연동되지 않았습니다.</div>
+          <div class="hint" id="inputHint">예시로 해보기는 고정된 시나리오(예시)입니다. 관찰 사실을 반영하면 시연용 카드 데이터가 표시됩니다.</div>
         </form>
       </section>
 
@@ -799,7 +799,7 @@
       카드 상태: <span class="mono">PROVISIONAL / BLOCKED / VERIFIED</span>, 단계: <span class="mono">0/5 ~ 5/5</span>.
       계약 항목 근거: IC·캐리어 분리(항목 4), 출처 우선순위(항목 8), 절대 최대 정격/출처 충돌 5열 표(항목 9·10), 출력 계약(항목 2), 상태 모델(항목 7).
       아직 실제 부품은 연결·측정하지 않았으며, 카드 5/5는 전원 인가나 런타임 통합 시험 완료가 아닙니다.
-      현재는 <strong>[시뮬레이션] 모드</strong>이며, 실제 스킬 호출 응답은 <span class="mono">/api/card</span> 연동 후 반영됩니다. 웹 검색 구역은 저작권 표시 문제로 제거됐습니다.
+      현재는 <strong>[/api/card] 연동 중</strong>이며, 실제 스킬 호출 응답이 들어오면 시뮬레이션 대신 실제 응답으로 표시됩니다. 웹 검색 구역은 저작권 표시 문제로 제거됐습니다.
     </footer>
 
   </main>
@@ -985,6 +985,11 @@
     setTimeout(function() { if (progressVisible) updateProgress('출처를 대조하는 중', true); }, 4000);
     setTimeout(function() { if (progressVisible) updateProgress('카드를 작성하는 중', true); }, 9000);
 
+    var apiError = null;
+    var card = null;
+    var source = 'demo';
+
+    // 1) API 호출만 시도. 네트워크/파싱 오류는 여기서 잡는다.
     try {
       var res = await fetch('/api/card', {
         method: 'POST',
@@ -995,29 +1000,47 @@
       var data = await res.json();
 
       if (!res.ok || !data.ok) {
-        handleApiError(data);
+        apiError = data;
         return;
       }
 
-      var card = data.card;
-      if (!card) { handleApiError(data); return; }
+      if (!data.card) { apiError = data; return; }
 
+      card = data.card;
+      source = 'api';
+    } catch (err) {
+      apiError = { error: 'upstage_request_failed' };
+    }
+
+    // API 호출 실패 시에만 예시 폴백
+    if (apiError) {
+      handleApiError(apiError);
+      var demo = buildDemoResponse(true);
+      updateDisplayFromCard(demo, true, 'demo');
+      inputHint.textContent = '실제 스킬 호출이 불가하여 예시 응답을 표시했습니다. 이는 실제 판정 결과가 아니라 예시입니다.';
+      return;
+    }
+
+    // 2) API 성공 후 렌더링만 시도. 렌더링 오류는 별도 처리.
+    try {
       // 완성도는 코드로 보정한다. 모델이 completeness를 PROVISIONAL로 주면서
       // blocked에 내용을 넣는 경우가 실측에서 확인됐다. 계약상 차단이 있으면
       // BLOCKED이므로 화면에서 바로잡는다.
       var hasBlock = Array.isArray(card.blocked)
         && card.blocked.length > 0
         && card.blocked[0] !== '없음';
-      var completeness = hasBlock ? 'BLOCKED' : card.completeness;
+      if (hasBlock) {
+        card = Object.assign({}, card, { completeness: 'BLOCKED' });
+      }
 
-      updateDisplayFromCard(card, true, 'api');
+      updateDisplayFromCard(card, true, source);
       toast('스킬 호출 결과가 반영됐습니다.');
-    } catch (err) {
-      handleApiError({ error: 'upstage_request_failed' });
-      // 실제 호출 불가 시 예시 응답으로 폴백
-      var demo = buildDemoResponse(true);
-      updateDisplayFromCard(demo, true, 'demo');
-      inputHint.textContent = '실제 스킬 호출이 불가하여 예시 응답을 표시했습니다. 이는 실제 판정 결과가 아니라 예시입니다.';
+    } catch (renderErr) {
+      // 렌더링 실패 시 다른 부품의 예시로 폴백하지 않는다.
+      // 기존 카드 상태를 유지하고 명확히 알린다.
+      console.error('api/card: 결과 표시 실패', renderErr);
+      toast('결과 표시 실패: 카드 데이터는 수신됐지만 화면에 표시하지 못했습니다.');
+      inputHint.textContent = '스킬 호출은 성공했지만 결과 표시에 실패했습니다. 입력은 그대로 유지되며, 새로 분석하기로 다시 시도할 수 있습니다.';
     } finally {
       submitBtn.disabled = false;
       submitBtn.textContent = '관찰 사실 반영';
@@ -1385,15 +1408,25 @@
     stagePrereq.innerHTML = '<strong>단계 전제</strong> ' + text;
   }
 
-  function nextItemsCount(nextSection) {
-    if (typeof nextSection !== 'string') return 0;
-    var lines = nextSection.split('\n');
-    var count = 0;
-    for (var i = 0; i < lines.length; i++) {
-      var t = lines[i].trim();
-      if (t.startsWith('-')) count++;
+  function nextHTML(nextActions, maxCount) {
+    var list = [];
+    if (Array.isArray(nextActions)) {
+      list = nextActions.slice(0, maxCount != null ? maxCount : 2);
+    } else if (typeof nextActions === 'string') {
+      var lines = nextActions.split('\n');
+      for (var i = 0; i < lines.length; i++) {
+        var t = lines[i].trim();
+        if (/^-\\s/.test(t)) list.push(t);
+        if (maxCount != null && list.length >= maxCount) break;
+      }
     }
-    return count;
+    if (list.length === 0) return '<p>- 없음</p>';
+    var out = '<ul>';
+    list.forEach(function(item) {
+      out += '<li>- ' + escapeHTML(item.replace(/^-\\s*/, '').replace(/^\\d+[.)]\\s*/, '')) + '</li>';
+    });
+    out += '</ul>';
+    return out;
   }
 
   function identifyHTML(ident) {
@@ -1452,7 +1485,7 @@
     sectionEls.observations.innerHTML = sectionHTML(card.observed);
     sectionEls.identify.innerHTML = identifyHTML(card.identification);
     sectionEls.sources.innerHTML = sectionHTML(card.sources);
-    sectionEls.electrical.innerHTML = electricalHTML(card.electrical);
+    sectionEls.electrical.innerHTML = electricalHTML(card.electrical, card.stage);
     sectionEls.blocked.innerHTML = sectionHTML(card.blocked);
     sectionEls.next.innerHTML = nextHTML(card.next_actions, nextItemsCount(card.next_actions));
     sectionEls.completeness.innerHTML = completenessHTML(card);
@@ -1470,10 +1503,18 @@
     return 'unconfirmed';
   }
 
-  function parseElectricalLines(text) {
+  function parseElectricalLines(text, cardStage) {
     // 텍스트 형식("- 게이트명: 내용" 또는 "- 게이트명")을 items 배열로 변환
+    // "없음"만 있는 배열은 게이트가 없는 것으로 처리한다.
     if (typeof text !== 'string') return null;
-    var lines = text.split('\n');
+    var lines = text.split('\\n');
+    var hasRealContent = false;
+    for (var i = 0; i < lines.length; i++) {
+      var t = lines[i].trim();
+      if (t && t !== '- 없음') { hasRealContent = true; break; }
+    }
+    if (!hasRealContent) return null;
+
     var items = [];
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i].trim();
@@ -1499,9 +1540,9 @@
     return items.length > 0 ? items : null;
   }
 
-  function electricalHTML(sec) {
+  function electricalHTML(sec, cardStage) {
     if (typeof sec === 'string' || Array.isArray(sec)) {
-      var parsed = parseElectricalLines(typeof sec === 'string' ? sec : sec.join('\n'));
+      var parsed = parseElectricalLines(typeof sec === 'string' ? sec : sec.join('\n'), cardStage);
       if (parsed) sec = { items: parsed, conflicts: [] };
       else return sectionHTML(sec);
     }
@@ -1534,25 +1575,20 @@
         });
         out += '</tbody></table>';
       }
-      out += '<div class="gate-principle">';
-      out += '<span class="principle-title">판정 원칙 (요약)</span>';
-      out += '<ul class="principle-list">';
-      out += '<li>IC 데이터시트로 캐리어의 VIN·레귤레이터·레벨 시프터·핀 배치를 확정하지 않습니다.</li>';
-      out += '<li>판매 페이지의 5V 가능 문구로 IC absolute maximum 3.6V 충돌을 자동 해소하지 않습니다.</li>';
-      out += '<li>확인된 값만 기준으로 판정하며, 근거 없거나 변형에 따라 달라지는 값은 미확인으로 남깁니다.</li>';
-      out += '</ul></div>';
-      out += buildIntegrationSummaryHTML(sec);
+      out += buildIntegrationSummaryHTML(sec, cardStage);
       return out;
     }
     return '<p>- 없음</p>';
   }
 
   // ---------------- 3/5 통과 요약 + 4/5 진입 조건 체크리스트 ----------------
-  function buildIntegrationSummaryHTML(sec) {
+  function buildIntegrationSummaryHTML(sec, cardStage) {
+    if (typeof cardStage !== 'number' || cardStage < 3) return '';
     if (typeof sec !== 'object' || !sec || !sec.items) return '';
     var items = sec.items;
     var conflicts = sec.conflicts || [];
     var total = items.length;
+    if (total === 0) return '';
     var verified = 0, calc = 0, unconfirmed = 0, blocked = 0;
     items.forEach(function(it) {
       if (!it.status) return;
