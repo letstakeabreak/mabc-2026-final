@@ -35,6 +35,7 @@ export default async function handler(req, res) {
     'source-evidence-rules.md',
     'electrical-compatibility-gates.md',
     'component-card-template.md',
+    'usage-examples.md',
   ];
   const systemParts = [];
   try {
@@ -111,7 +112,41 @@ blocked 에 내용이 있으면 completeness 는 반드시 "BLOCKED" 이다.
               additionalProperties: false,
             },
             sources:      { type: 'array', items: { type: 'string' } },
-            electrical:   { type: 'array', items: { type: 'string' } },
+            electrical: {
+              type: 'object',
+              properties: {
+                items: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      gate:      { type: 'string' },
+                      status:    { type: 'string', enum: ['verified', 'calc', 'unconfirmed', 'blocked'] },
+                      evidence:  { type: 'string' },
+                    },
+                    required: ['gate', 'status'],
+                    additionalProperties: false,
+                  },
+                },
+                conflicts: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      source:   { type: 'string' },
+                      claim:    { type: 'string' },
+                      target:   { type: 'string' },
+                      conflict: { type: 'string' },
+                      unblock:  { type: 'string' },
+                    },
+                    required: ['source', 'claim', 'target', 'conflict', 'unblock'],
+                    additionalProperties: false,
+                  },
+                },
+              },
+              required: ['items', 'conflicts'],
+              additionalProperties: false,
+            },
             blocked:      { type: 'array', items: { type: 'string' } },
             next_actions: { type: 'array', items: { type: 'string' }, maxItems: 2 },
             completeness: { type: 'string', enum: ['PROVISIONAL', 'BLOCKED', 'VERIFIED'] },
@@ -173,6 +208,23 @@ blocked 에 내용이 있으면 completeness 는 반드시 "BLOCKED" 이다.
         detail: e.message,
         content: content.slice(0, 2000),
       });
+    }
+
+    // 의미 검증: blocked에 "없음" 외 항목이 하나라도 있으면 completeness는 BLOCKED
+    if (Array.isArray(card.blocked)) {
+      const hasRealBlock = card.blocked.some(function(item) {
+        return typeof item === 'string' && item.trim() !== '' && item.trim() !== '없음';
+      });
+      if (hasRealBlock && card.completeness !== 'BLOCKED') {
+        console.warn('api/card: blocked 항목이 있어 completeness를 BLOCKED로 보정');
+        card.completeness = 'BLOCKED';
+      }
+    }
+
+    // electrical이 객체 구조면 items/conflicts 존재 여부만 검증하고, 문자열 배열이면 그대로 둔다.
+    if (card.electrical && typeof card.electrical === 'object' && !Array.isArray(card.electrical)) {
+      if (!Array.isArray(card.electrical.items)) card.electrical.items = [];
+      if (!Array.isArray(card.electrical.conflicts)) card.electrical.conflicts = [];
     }
 
     return res.status(200).json({
