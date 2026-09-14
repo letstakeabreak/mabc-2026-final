@@ -247,6 +247,14 @@
     margin: 6px 0 3px; padding-bottom: 2px; border-bottom: 1px solid var(--border);
   }
 
+  .prereq {
+    font-size: 0.72rem; color: var(--text-soft);
+    padding: 2px 6px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 4px;
+    white-space: nowrap;
+  }
+  .prereq strong { color: var(--text); font-weight: 600; }
+
   /* ---- 전기 호환성 게이트 전용 스타일 ---- */
   .subhead {
     font-size: 0.72rem; font-weight: 600; color: var(--text-soft);
@@ -304,6 +312,34 @@
   .conflict-table td {
     word-break: break-word;
   }
+  .summary-list {
+    margin: 0 0 3px; padding-left: 14px;
+    font-size: 0.78rem;
+  }
+  .summary-list li {
+    margin-bottom: 1px; color: var(--text-soft);
+  }
+  .summary-pass {
+    margin-top: 4px; padding: 5px 7px;
+    border: 1px solid var(--ok); border-radius: 4px;
+    background: var(--ok-soft); color: var(--ok);
+    font-size: 0.78rem; font-weight: 500;
+  }
+  .summary-fail {
+    margin-top: 4px; padding: 5px 7px;
+    border: 1px solid var(--danger); border-radius: 4px;
+    background: var(--danger-soft); color: var(--danger);
+    font-size: 0.78rem; font-weight: 500;
+  }
+  .checklist {
+    margin: 0 0 3px; padding-left: 14px;
+    font-size: 0.78rem;
+  }
+  .checklist li {
+    margin-bottom: 1px; padding-left: 2px;
+  }
+  .check-ok { color: var(--ok); }
+  .check-no { color: var(--danger); }
   .badge.calc {
     color: var(--accent); border-color: var(--accent); background: var(--accent-soft);
   }
@@ -335,6 +371,7 @@
       <span class="badge" id="stateBadge">카드 0/5</span>
       <span class="status-text" id="stateText">식별 근거 수집 중 — 관찰 사실을 입력해 주세요.</span>
       <span class="spacer"></span>
+      <span class="prereq" id="stagePrereq"></span>
       <span class="pill" id="modePill"><span class="dot"></span> 시뮬레이션</span>
     </div>
 
@@ -631,9 +668,9 @@
     if (filled) {
       return {
         ok: true,
-        stage: 1,
+        stage: 3,
         state: 'PROVISIONAL',
-        stateLine: '[카드 1/5] IC·캐리어·타겟 후보 분리',
+        stateLine: '[카드 3/5] 전기 호환성 판정',
         sections: {
           '관찰 사실': [
             '부품/모듈 이름: GY-521 (MPU-6050 IC 포함 모듈)',
@@ -994,33 +1031,74 @@
   var stateText = document.getElementById('stateText');
   var modePill = document.getElementById('modePill');
 
+  var stagePrereq = document.getElementById('stagePrereq');
+
+  var PREQ_TEXTS = {
+    0: null,
+    1: '1/5 진입: 0/5 종료 증거 있음',
+    2: '2/5 진입: 1/5 종료 증거 있음',
+    3: '3/5 진입: 2/5 매핑 완료 + 미해결 안전 출처 충돌 0개',
+    4: '4/5 진입: 3/5 전 게이트 통과 + BLOCKED 0개',
+    5: '5/5 진입: 4/5 종료 증거 있음',
+  };
+  function setStagePrereq(stage) {
+    var text = PREQ_TEXTS[stage];
+    if (!text) { stagePrereq.style.display = 'none'; return; }
+    stagePrereq.style.display = '';
+    stagePrereq.innerHTML = '<strong>단계 전제</strong> ' + text;
+  }
+
+  function nextItemsCount(nextSection) {
+    if (typeof nextSection !== 'string') return 0;
+    var lines = nextSection.split('\n');
+    var count = 0;
+    for (var i = 0; i < lines.length; i++) {
+      var t = lines[i].trim();
+      if (t.startsWith('-')) count++;
+    }
+    return count;
+  }
+
   function updateDisplay(resp, filled, source) {
     currentResponse = resp;
     stateBadge.textContent = resp.stateLine;
     stateBadge.className = 'badge ' + (STATE_BADGE_CLASS[resp.state] || '');
-    if (source === 'api') {
-      stateText.textContent = '스킬 호출 결과가 반영됐습니다. 실제 판정 결과입니다.';
-      modePill.innerHTML = '<span class="dot"></span> 실제 응답';
-    } else if (source === 'demo') {
-      stateText.textContent = '예시 시나리오 응답이 채워졌습니다. 이는 실제 판정 결과가 아니라 예시입니다.';
-      modePill.innerHTML = '<span class="dot"></span> 시뮬레이션 (예시)';
+    setStagePrereq(resp.stage);
+
+    var stateHint = '';
+    if (resp.state === 'BLOCKED') {
+      stateHint = '차단 항목이 있습니다. 전원 인가 전 차단 항목을 먼저 확인하세요.';
+    } else if (resp.state === 'VERIFIED') {
+      stateHint = '전기 호환성 판정이 확인됐습니다. [카드 5/5]는 전원 인가 완료나 통합 시험 완료가 아닙니다.';
+    } else if (resp.stage === 0) {
+      stateHint = '관찰 사실을 입력해 식별 근거를 모으세요.';
     } else {
-      stateText.textContent = filled
-        ? '관찰 사실이 반영됐습니다. 근거를 더 채우면 단계가 올라갈 수 있습니다.'
-        : '식별 근거 수집 중 — 관찰 사실을 입력해 주세요.';
-      modePill.innerHTML = '<span class="dot"></span> 시뮬레이션';
+      stateHint = '아직 확인된 근거가 충분하지 않습니다. 출처·전기 조건을 더 채우면 단계가 올라갈 수 있습니다.';
     }
+
+    var modeLabel = '시뮬레이션';
+    var modeHint = '시뮬레이션 응답입니다. 실제 판정 결과가 아닙니다.';
+    if (source === 'api') {
+      modeLabel = '실제 응답';
+      modeHint = '스킬 호출 결과입니다. 실제 판정 결과입니다.';
+    } else if (source === 'demo') {
+      modeLabel = '시뮬레이션 (예시)';
+      modeHint = '예시 시나리오 응답입니다. 실제 판정 결과가 아니라 예시이며, 고정된 시연 데이터입니다.';
+    }
+    stateText.textContent = stateHint;
+    modePill.innerHTML = '<span class="dot"></span> ' + modeLabel;
+    modePill.title = modeHint;
 
     sectionEls.observations.innerHTML = sectionHTML(resp.sections.observations);
     sectionEls.identify.innerHTML = sectionHTML(resp.sections.identify);
     sectionEls.sources.innerHTML = sectionHTML(resp.sections.sources);
     sectionEls.electrical.innerHTML = electricalHTML(resp.sections.electrical);
     sectionEls.blocked.innerHTML = sectionHTML(resp.sections.blocked);
-    sectionEls.next.innerHTML = sectionHTML(resp.sections.next);
-    sectionEls.completeness.innerHTML = sectionHTML(resp.sections.completeness);
+    sectionEls.next.innerHTML = nextHTML(resp.sections.next, nextItemsCount(resp.sections.next));
+    sectionEls.completeness.innerHTML = completenessHTML(resp);
 
     inputHint.textContent = filled
-      ? '스킬의 일곱 구역 출력과 카드 상태 모델을 그대로 보여줍니다. 실제 연동 전에는 시뮬레이션 응답입니다.'
+      ? '일곱 구역 출력과 카드 상태 모델을 그대로 보여줍니다. 연동 전에는 시뮬레이션 응답이며, 실제 판정 결과가 아닙니다.'
       : '아직 관찰 사실이 없습니다. 아래 입력을 채워 반영하세요.';
   }
 
@@ -1103,9 +1181,52 @@
       out += '<li>판매 페이지의 5V 가능 문구로 IC absolute maximum 3.6V 충돌을 자동 해소하지 않습니다.</li>';
       out += '<li>확인된 값만 기준으로 판정하며, 근거 없거나 변형에 따라 달라지는 값은 미확인으로 남깁니다.</li>';
       out += '</ul></div>';
+      out += buildIntegrationSummaryHTML(sec);
       return out;
     }
     return '<p>- 없음</p>';
+  }
+
+  // ---------------- 3/5 통과 요약 + 4/5 진입 조건 체크리스트 ----------------
+  function buildIntegrationSummaryHTML(sec) {
+    if (typeof sec !== 'object' || !sec || !sec.items) return '';
+    var items = sec.items;
+    var conflicts = sec.conflicts || [];
+    var total = items.length;
+    var verified = 0, calc = 0, unconfirmed = 0, blocked = 0;
+    items.forEach(function(it) {
+      if (!it.status) return;
+      if (it.status === 'verified') verified++;
+      else if (it.status === 'calc') calc++;
+      else if (it.status === 'blocked') blocked++;
+      else unconfirmed++;
+    });
+    var passed = (blocked === 0 && conflicts.length === 0);
+    var out = '';
+    out += '<div class="subhead">3/5 통과 요약</div>';
+    out += '<ul class="summary-list">';
+    out += '<li>검증: <strong>' + verified + '</strong> / ' + total + '</li>';
+    out += '<li>계산: <strong>' + calc + '</strong> / ' + total + '</li>';
+    out += '<li>미확인: <strong>' + unconfirmed + '</strong> / ' + total + '</li>';
+    out += '<li>차단: <strong>' + blocked + '</strong> / ' + total + '</li>';
+    out += '<li>출처 충돌: <strong>' + conflicts.length + '</strong></li>';
+    out += '</ul>';
+    if (passed) {
+      out += '<div class="summary-pass">3/5 통과 — 미해결 게이트·충돌 0개. 4/5 통합 조건 정리로 넘어가기 위한 전제 충족.</div>';
+    } else {
+      out += '<div class="summary-fail">3/5 미통과 — 차단 ' + blocked + '건, 출처 충돌 ' + conflicts.length + '건. 차단 해제 전 4/5 진입 불가.</div>';
+    }
+    out += '<div class="subhead">4/5 통합 조건 정리 — 진입 조건</div>';
+    out += '<ul class="checklist">';
+    out += '<li class="' + (passed ? 'check-ok' : 'check-no') + '">3/5 전 게이트 통과 (모두 VERIFIED 또는 미확인 정리): ' + (passed ? '충족' : '미충족') + '</li>';
+    out += '<li class="' + (blocked === 0 ? 'check-ok' : 'check-no') + '">BLOCKED 0개: ' + (blocked === 0 ? '충족' : '미충족 (' + blocked + '건)') + '</li>';
+    out += '<li class="' + (conflicts.length === 0 ? 'check-ok' : 'check-no') + '">미해결 안전 출처 충돌 0개: ' + (conflicts.length === 0 ? '충족' : '미충족 (' + conflicts.length + '건)') + '</li>';
+    out += '</ul>';
+    out += '<div class="gate-principle" style="margin-top:6px;">';
+    out += '<span class="principle-title">참고</span>';
+    out += '<ul class="principle-list"><li>전기 호환성 판정이 BLOCKED이면 [카드 4/5]로 진입하지 않습니다.</li></ul>';
+    out += '</div>';
+    return out;
   }
 
   function sectionHTML(lines) {
