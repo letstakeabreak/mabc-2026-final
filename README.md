@@ -172,7 +172,8 @@ BLOCKED 기록에는 차단 이유, 금지 행동, 해제 조건, 해제 증거,
 
 ## 공개 URL
 
-공개 URL: (배포 후 추가)
+- [mabc-final-psi.vercel.app](https://mabc-final-psi.vercel.app) — Vercel 배포본
+- 배포 커밋은 `git log --oneline -1`으로 확인한다. README 본문의 sha256은 스킬 등록본 기준이며, 서비스 배포 커밋과 다를 수 있다.
 
 ---
 
