@@ -75,9 +75,13 @@
     overflow: hidden;
   }
   .sidebar.collapsed {
-    width: 0;
+    width: 48px;
     margin-right: 0;
   }
+  .sidebar.collapsed .sidebar-section { display: none; }
+  .sidebar.collapsed .sidebar-divider { display: none; }
+  .sidebar.collapsed .sidebar-toggle { display: flex; }
+  .sidebar.collapsed .sidebar-footer { display: none; }
   .sidebar-header {
     display: flex;
     align-items: center;
@@ -146,35 +150,39 @@
     margin: 0;
   }
 
-  /* ---- 사이드바 토글 ---- */
+  /* ---- 사이드바 토글(헤더 내부) ---- */
   .sidebar-toggle {
-    position: absolute;
-    top: 50%;
-    left: 240px;
-    transform: translateY(-50%);
-    z-index: 20;
-    width: 28px;
-    height: 44px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text);
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: var(--shadow);
-    transition: left 0.2s ease, background 0.15s, border-color 0.15s;
-    line-height: 1;
+    gap: 6px;
+    width: 100%;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
     user-select: none;
+    font-family: var(--sans);
+    line-height: 1;
   }
   .sidebar-toggle:hover {
-    border-color: var(--accent);
-    background: var(--surface-2);
+    background: var(--accent-soft);
+    color: var(--accent);
   }
-  .sidebar.collapsed ~ .sidebar-toggle {
-    left: 0;
+  .sidebar-toggle .toggle-icon {
+    display: inline-block;
+    transition: transform 0.15s;
+    font-size: 0.9rem;
+  }
+  .sidebar.collapsed .sidebar-toggle .toggle-icon {
+    transform: rotate(180deg);
+  }
+  .sidebar.collapsed .sidebar-toggle {
+    border-bottom: 1px solid var(--accent);
   }
 
   /* ---- 메인 영역 ---- */
@@ -626,6 +634,9 @@
 
   <!-- ===== 사이드바 ===== -->
   <aside class="sidebar" id="sidebar">
+    <div class="sidebar-toggle" id="sidebarToggle" role="button" tabindex="0" aria-label="사이드바 펼치기" title="사이드바 접기/펼치기" aria-expanded="true">
+      <span class="toggle-icon">◀</span><span class="toggle-label">접기</span>
+    </div>
     <div class="sidebar-section">
       <div class="sidebar-section-head">
         <h2>예시 시나리오</h2>
@@ -660,7 +671,6 @@
       <button type="button" class="danger" id="clearBtn">전체 삭제</button>
     </div>
   </aside>
-  <button class="sidebar-toggle" id="sidebarToggle" aria-label="사이드바 접기" title="사이드바 접기/펼치기">◀</button>
 
   <!-- ===== 메인 영역 ===== -->
   <main class="main-area">
@@ -722,8 +732,7 @@
           <div class="actions">
             <button type="button" id="exampleBtn" class="secondary">예시로 해보기를 눌러보기</button>
             <button type="submit" id="submitBtn" class="primary">관찰 사실 반영</button>
-            <button type="button" class="secondary" id="resetBtn">입력 초기화</button>
-            <button type="button" class="secondary" id="newAnalysisBtn">새로 분석하기</button>
+            <button type="button" class="secondary" id="newAnalysisBtn">새로 분석하기 — 입력·출력 초기화</button>
           </div>
           <div class="hint" id="inputHint">예시로 해보기는 고정된 시나리오(예시)입니다. 실제 입력에 대한 판정과 응답은 아직 연동되지 않았습니다.</div>
         </form>
@@ -739,45 +748,45 @@
         <div class="hint" style="margin-bottom:6px;">아래 일곱 구역은 스킬의 출력 계약을 그대로 따릅니다. 실제 데이터가 들어오면 [확인된 자료]와 [확인된 전기 조건]에 출처·버전·target·확인 날짜와 함께 채워집니다.</div>
         <div class="progress" id="progress" aria-live="polite"><span class="spinner"></span><span id="progressText"></span></div>
         <div class="sections" id="sections">
-          <div class="section" data-section="observations">
-            <div class="section-head" role="button" tabindex="0" aria-expanded="false">
-              <span class="chev">▶</span><span class="tag">관찰 사실</span><span class="name">[관찰 사실]</span>
+          <div class="section open" data-section="observations">
+            <div class="section-head" role="button" tabindex="0" aria-expanded="true">
+              <span class="chev">▶</span><span class="tag">관찰 사실</span>
             </div>
             <div class="section-body"><p id="s-observations">- 없음</p></div>
           </div>
-          <div class="section" data-section="identify">
-            <div class="section-head" role="button" tabindex="0" aria-expanded="false">
-              <span class="chev">▶</span><span class="tag">식별 상태</span><span class="name">[식별 상태]</span>
+          <div class="section open" data-section="identify">
+            <div class="section-head" role="button" tabindex="0" aria-expanded="true">
+              <span class="chev">▶</span><span class="tag">식별 상태</span>
             </div>
             <div class="section-body"><p id="s-identify">- PROVISIONAL</p></div>
           </div>
-          <div class="section" data-section="sources">
-            <div class="section-head" role="button" tabindex="0" aria-expanded="false">
-              <span class="chev">▶</span><span class="tag">확인된 자료</span><span class="name">[확인된 자료]</span>
+          <div class="section open" data-section="sources">
+            <div class="section-head" role="button" tabindex="0" aria-expanded="true">
+              <span class="chev">▶</span><span class="tag">확인된 자료</span>
             </div>
             <div class="section-body" id="s-sources"><p class="evidence-list"><div class="evidence-item">- 없음</div></p></div>
           </div>
-          <div class="section" data-section="electrical">
-            <div class="section-head" role="button" tabindex="0" aria-expanded="false">
-              <span class="chev">▶</span><span class="tag">확인된 전기 조건</span><span class="name">[확인된 전기 조건]</span>
+          <div class="section open" data-section="electrical">
+            <div class="section-head" role="button" tabindex="0" aria-expanded="true">
+              <span class="chev">▶</span><span class="tag">확인된 전기 조건</span>
             </div>
             <div class="section-body" id="s-electrical"><p class="evidence-list"><div class="evidence-item">- 없음</div></p></div>
           </div>
-          <div class="section" data-section="blocked">
-            <div class="section-head" role="button" tabindex="0" aria-expanded="false">
-              <span class="chev">▶</span><span class="tag">현재 차단 항목</span><span class="name">[현재 차단 항목]</span>
+          <div class="section open" data-section="blocked">
+            <div class="section-head" role="button" tabindex="0" aria-expanded="true">
+              <span class="chev">▶</span><span class="tag">현재 차단 항목</span>
             </div>
             <div class="section-body"><p id="s-blocked">- 없음</p></div>
           </div>
-          <div class="section" data-section="next">
-            <div class="section-head" role="button" tabindex="0" aria-expanded="false">
-              <span class="chev">▶</span><span class="tag">지금 할 것</span><span class="name">[지금 할 것]</span>
+          <div class="section open" data-section="next">
+            <div class="section-head" role="button" tabindex="0" aria-expanded="true">
+              <span class="chev">▶</span><span class="tag">지금 할 것</span>
             </div>
             <div class="section-body" id="s-next"></div>
           </div>
-          <div class="section" data-section="completeness">
-            <div class="section-head" role="button" tabindex="0" aria-expanded="false">
-              <span class="chev">▶</span><span class="tag">카드 완성도</span><span class="name">[카드 완성도]</span>
+          <div class="section open" data-section="completeness">
+            <div class="section-head" role="button" tabindex="0" aria-expanded="true">
+              <span class="chev">▶</span><span class="tag">카드 완성도</span>
             </div>
             <div class="section-body"><p id="s-completeness">- PROVISIONAL</p></div>
           </div>
@@ -830,22 +839,22 @@
 
   function setSidebarCollapsed(collapced) {
     sidebar.classList.toggle('collapsed', collapced);
-    sidebarToggle.textContent = collapced ? '▶' : '◀';
+    var icon = sidebarToggle.querySelector('.toggle-icon');
+    var label = sidebarToggle.querySelector('.toggle-label');
+    if (icon) icon.textContent = collapced ? '▶' : '◀';
+    if (label) label.textContent = collapced ? '펼치기' : '접기';
     sidebarToggle.setAttribute('aria-label', collapced ? '사이드바 펼치기' : '사이드바 접기');
     sidebarToggle.setAttribute('title', collapced ? '사이드바 펼치기' : '사이드바 접기');
+    sidebarToggle.setAttribute('aria-expanded', String(!collapced));
     try { localStorage.setItem(SIDEBAR_STATE_KEY, String(collapced)); } catch(e) {}
   }
 
-  // 초기 상태: 넓은 화면이면 저장된 상태 또는 기본 열림, 좁은 화면이면 기본 접힘
+  // 초기 상태: 저장된 값과 상관없이 기본값은 펼침.
+  // 브라우저에 기존 접힘 상태가 저장돼 있어도 처음 열 때 펼침으로 덮어쓴다.
+  // 화면 폭이 좁으면(960px 미만) 자동 접힘.
   (function initSidebar() {
     var isNarrow = window.innerWidth < 960;
-    var saved = false;
-    try { saved = localStorage.getItem(SIDEBAR_STATE_KEY) === 'true'; } catch(e) {}
-    if (isNarrow) {
-      setSidebarCollapsed(true);
-    } else {
-      setSidebarCollapsed(saved);
-    }
+    setSidebarCollapsed(isNarrow);
   })();
 
   sidebarToggle.addEventListener('click', function() {
@@ -853,13 +862,10 @@
     setSidebarCollapsed(nowCollapsed);
   });
 
-  // 화면 폭 변경 시 좁은 화면이면 자동 접기 (사용자 토글로 연 경우 제외)
+  // 화면 폭 변경 시 좁은 화면이면 자동 접기
   window.addEventListener('resize', function() {
     if (window.innerWidth < 960) {
-      sidebar.classList.add('collapsed');
-      sidebarToggle.textContent = '▶';
-      sidebarToggle.setAttribute('aria-label', '사이드바 펼치기');
-      sidebarToggle.setAttribute('title', '사이드바 펼치기');
+      setSidebarCollapsed(true);
     }
   });
 
@@ -908,7 +914,6 @@
   var photoLink = document.getElementById('photoLink');
   var powerInfo = document.getElementById('powerInfo');
   var submitBtn = document.getElementById('submitBtn');
-  var resetBtn = document.getElementById('resetBtn');
   var exampleBtn = document.getElementById('exampleBtn');
   var inputHint = document.getElementById('inputHint');
   var progressEl = document.getElementById('progress');
@@ -1022,11 +1027,6 @@
       updateProgress('', false);
     }
   }
-  resetBtn.addEventListener('click', function() {
-    form.reset();
-    updateFromForm(false);
-    toast('입력이 초기화됐습니다.');
-  });
   exampleBtn.addEventListener('click', function() {
     partName.value = 'GY-521 (MPU-6050 IC 포함 모듈)';
     targetBoard.value = 'ESP32 30핀 개발보드';
