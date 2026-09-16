@@ -19,3 +19,6 @@ _ref/
 .hermes/skills/component-integration-card/SKILL.md.bak
 .vercel
 .env*
+
+# 로컬 개발 서버 로그
+web/*.log
