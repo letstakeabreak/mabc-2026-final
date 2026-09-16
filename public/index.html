@@ -1113,37 +1113,7 @@
     };
     if (!filled) return base;
 
-    return {
-      stage: 3,
-      stage_title: '전기 호환성 판정',
-      observed: [
-        '부품/모듈 이름: HC-SR04 초음파 센서',
-        '타겟 보드: ESP32 30핀 개발보드',
-        '관찰 사실: 파란 기판, 4핀. Echo 핀을 ESP32 GPIO에 직결할 예정. 거리 측정 목적.',
-        '사진/구매 링크: 없음',
-        '사용 전원/전압: 5V VCC'
-      ],
-      identification: {
-        ic: '미확인 (내부 IC 표식·회로도 근거 없음)',
-        carrier: 'HC-SR04 계열 초음파 센서 모듈',
-        target: 'ESP32 30핀 개발보드'
-      },
-      sources: ['없음'],
-      electrical: {
-        items: [
-          { gate: 'HC-SR04 VCC 공급 전압', status: 'unconfirmed', evidence: '출처 미확인 — 5V 사용 주장만 있음, 사양서/데이터시트 미대조' },
-          { gate: 'HC-SR04 Echo 출력 전압', status: 'blocked', evidence: 'Echo 출력 전압이 확인될 때까지 ESP32 GPIO 직결 금지 — 미확인 상태에서 5V 직통은 ESP32 손상 위험' },
-          { gate: 'ESP32 GPIO 입력 내성', status: 'unconfirmed', evidence: '출처 미확인 — ESP32 GPIO 절대 최대 정격 3.3V 근거는 확인 문헌 없음' }
-        ],
-        conflicts: []
-      },
-      blocked: ['없음'],
-      next_actions: [
-        'Echo 핀과 ESP32 GPIO 사이에 레벨 시프터를 삽입한다.',
-        '3.3V 전용 초음파 센서(HC-SR04 3.3V 버전 또는 대안)로 교체 검토.'
-      ],
-      completeness: 'BLOCKED'
-    };
+    return buildHcSr04BlockFixture();
   }
 
   // ---------------- 카드 상태 모델 ----------------
@@ -1662,7 +1632,52 @@
     return '<p>- 없음</p>';
   }
 
-  // ---------------- 입력 폼 상태 반영 ----------------
+  // ---------------- 공통 HC-SR04 위험 예시 fixture ----------------
+  // 예시로 해보기(buildDemoResponse(true))와 예시 시나리오(buildScenarioCard('hc-sr04-block'))가
+  // 같은 안전 불변 조건(BLOCKED, 차단 항목, 10게이트 집계, 4/5 진입 불가)을 공유하도록 한다.
+  // 문구 표현은 용도별로 다를 수 있지만, 상태 계약과 집계는 동일해야 한다.
+  function buildHcSr04BlockFixture() {
+    return {
+      stage: 3,
+      stage_title: '전기 호환성 판정',
+      observed: [
+        '부품/모듈 이름: HC-SR04 초음파 센서',
+        '타겟 보드: ESP32 30핀 개발보드',
+        '관찰 사실: 파란 기판, 4핀. Echo 핀을 ESP32 GPIO에 직결할 예정. 거리 측정 목적.',
+        '사진/구매 링크: 없음',
+        '사용 전원/전압: 5V VCC'
+      ],
+      identification: {
+        ic: '미확인 (내부 IC 표식·회로도 근거 없음)',
+        carrier: 'HC-SR04 계열 초음파 센서 모듈',
+        target: 'ESP32 30핀 개발보드'
+      },
+      sources: ['없음'],
+      electrical: {
+        items: [
+          { gate: 'HC-SR04 VCC 공급 전압', status: 'unconfirmed', evidence: '출처 미확인 — 5V 사용 주장만 있음, 사양서/데이터시트 미대조' },
+          { gate: 'HC-SR04 Echo 출력 전압', status: 'blocked', evidence: 'Echo 출력 전압이 확인될 때까지 ESP32 GPIO 직결 금지 — 미확인 상태에서 5V 직통은 ESP32 손상 위험' },
+          { gate: 'ESP32 GPIO 입력 내성', status: 'unconfirmed', evidence: '출처 미확인 — ESP32 GPIO 절대 최대 정격 3.3V 근거는 확인 문헌 없음' },
+          { gate: '로직 레벨 (GPIO HIGH/LOW)', status: 'unconfirmed', evidence: '출처 미확인 — ESP32 3.3V 로직과 HC-SR04 Echo 출력 레벨의 직접 호환 여부 미대조' },
+          { gate: '일반 소비 전류', status: 'unconfirmed', evidence: '출처 미확인 — HC-SR04 모듈의 일반 소비 전류 치 미확인' },
+          { gate: '최대·피크 소비 전류', status: 'unconfirmed', evidence: '출처 미확인 — 트리거/에코 펄스의 피크 전류 값 미확인' },
+          { gate: '전원/GND 경로 (공통 그라운드 여부)', status: 'unconfirmed', evidence: '출처 미확인 — 본 조합에서의 공통 GND 연결 구성을 확인하지 않음' },
+          { gate: '직결/레벨 변환/보호 필요 여부', status: 'unconfirmed', evidence: '출처 미확인 — Echo 출력 전압 확인 전까지 직결 금지, 레벨 시프터 필요 여부는 확인 후 결정' },
+          { gate: '극성·핀 방향 (VCC/GND 극성, 핀 배치 방향)', status: 'unconfirmed', evidence: '출처 미확인 — VCC/GND 극성 및 핀 배치 방향을 확인하지 않음' },
+          { gate: '버스 게이트 (I2C 주소, 풀업, 버스 전압, 다중 장치)', status: 'unconfirmed', evidence: '출처 미확인 — 본 조합은 병렬 버스 장치가 없는 단품 연결 기준으로 보되, 향후 다중 장치 시 재평가' }
+        ],
+        conflicts: []
+      },
+      blocked: [
+        'Echo 출력 전압이 확인될 때까지 ESP32 GPIO 직결 금지 — 미확인 상태에서 5V 직통은 ESP32 손상 위험. 해제 조건: Echo 출력 전압을 공식 출처에서 확인하고, 필요 시 레벨 시프터 또는 3.3V 전용 센서로 변경.'
+      ],
+      next_actions: [
+        'Echo 핀과 ESP32 GPIO 사이에 레벨 시프터를 삽입한다.',
+        '3.3V 전용 초음파 센서(HC-SR04 3.3V 버전 또는 대안)로 교체 검토.'
+      ],
+      completeness: 'BLOCKED'
+    };
+  }
   function updateFromForm(filled, source) {
     // 현재는 /api/card 프록시가 준비돼 있으며, 실제 응답이 없으면 buildDemoResponse를 사용합니다.
     var resp = buildDemoResponse(filled);
@@ -1883,37 +1898,7 @@
           completeness: 'PROVISIONAL'
         };
       case 'hc-sr04-block':
-        return {
-          stage: 3,
-          stage_title: '전기 호환성 판정',
-          observed: [
-            '부품/모듈 이름: HC-SR04 초음파 센서',
-            '타겟 보드: ESP32 30핀 개발보드',
-            '관찰 사실: 파란 기판, 4핀. Echo 핀을 ESP32 GPIO에 직결할 예정. 거리 측정 목적.',
-            '사진/구매 링크: 없음',
-            '사용 전원/전압: 5V VCC'
-          ],
-          identification: {
-            ic: '미확인 (내부 IC 표식·회로도 근거 없음)',
-            carrier: 'HC-SR04 계열 초음파 센서 모듈',
-            target: 'ESP32 30핀 개발보드'
-          },
-          sources: ['없음'],
-          electrical: {
-            items: [
-              { gate: 'HC-SR04 VCC 공급 전압', status: 'unconfirmed', evidence: '출처 미확인 — 5V 사용 주장만 있음, 사양서/데이터시트 미대조' },
-              { gate: 'HC-SR04 Echo 출력 전압', status: 'blocked', evidence: '5V TTL 출력으로 추정되나 확인 문헌 없음 — ESP32 GPIO 3.3V 초과 위험' },
-              { gate: 'ESP32 GPIO 입력 내성', status: 'unconfirmed', evidence: '출처 미확인 — ESP32 GPIO 절대 최대 정격 3.3V 근거는 확인 문헌 없음' }
-            ],
-            conflicts: []
-          },
-          blocked: ['Echo 출력이 5V로 추정되나 확인 문헌 없음 — ESP32 GPIO는 3.3V 초과 입력 허용 안 됨. 직결 시 ESP32 손상 가능. 레벨 시프터 또는 3.3V 전용 센서 필요.'],
-          next_actions: [
-            'Echo 핀과 ESP32 GPIO 사이에 레벨 시프터를 삽입한다.',
-            '3.3V 전용 초음파 센서(HC-SR04 3.3V 버전 또는 대안)로 교체 검토.'
-          ],
-          completeness: 'BLOCKED'
-        };
+        return buildHcSr04BlockFixture();
     }
     return null;
   }

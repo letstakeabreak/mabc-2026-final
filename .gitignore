@@ -22,3 +22,10 @@ _ref/
 
 # 로컬 개발 서버 로그
 web/*.log
+
+# 로컬 작업 파일
+.venv/
+_pptx_render/
+*.pptx
+_probe*.js
+web/mabc-dev-server-logged.js

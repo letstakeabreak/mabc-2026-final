@@ -74,14 +74,15 @@ global.escapeHTML = function(s) {
 };
 global.toast = function() {};
 
-const fnNames = ['escapeHTML', 'electricalStatusClass', 'parseElectricalLines', 'electricalHTML', 'sectionHTML', 'buildDemoResponse', 'nextHTML', 'identifyHTML', 'completenessHTML', 'updateDisplayFromCard'];
+const fnNames = ['escapeHTML', 'electricalStatusClass', 'parseElectricalLines', 'electricalHTML', 'sectionHTML', 'buildHcSr04BlockFixture', 'buildDemoResponse', 'nextHTML', 'identifyHTML', 'completenessHTML', 'updateDisplayFromCard'];
 const fns = {};
 fnNames.forEach(name => {
   const fnCode = extractFunction(code, name);
   if (fnCode) {
     try {
       eval(fnCode);
-      fns[name] = eval(name);
+      global[name] = eval(name);
+      fns[name] = global[name];
     } catch (e) {
       console.log('eval fail:', name, e.message);
     }
@@ -140,9 +141,18 @@ assert(emptyCard.stage === 0, '빈 입력 시 카드 단계 0/5');
 assert(emptyCard.completeness === 'PROVISIONAL', '빈 입력 시 완성도 PROVISIONAL');
 assert(Array.isArray(emptyCard.electrical) || (emptyCard.electrical && typeof emptyCard.electrical === 'object'), 'electrical 존재');
 
-// 7-2. 정보 부족: next_actions 최대 2개
+// 7-2. 예시로 해보기 데모 응답 불변 조건: 10게이트, BLOCKED 1개, 차단 문구 존재
 const filledCard = fns.buildDemoResponse(true);
+assert(filledCard && filledCard.completeness === 'BLOCKED', 'buildDemoResponse(true) 완성도 BLOCKED');
 assert(Array.isArray(filledCard.next_actions) && filledCard.next_actions.length <= 2, 'next_actions 최대 2개');
+assert(filledCard && filledCard.electrical && Array.isArray(filledCard.electrical.items), 'buildDemoResponse(true) electrical.items 배열 존재');
+assert(filledCard.electrical.items.length === 10, 'buildDemoResponse(true) 전기 게이트 10개');
+assert(filledCard.electrical.items.filter(it => it.status === 'blocked').length === 1, 'buildDemoResponse(true) 차단 게이트 1개');
+assert(filledCard.electrical.items.filter(it => it.status === 'verified').length === 0, 'buildDemoResponse(true) verified 0개');
+assert(filledCard.electrical.items.filter(it => it.status === 'calc').length === 0, 'buildDemoResponse(true) calc 0개');
+assert(filledCard && filledCard.blocked && filledCard.blocked.length > 0 && filledCard.blocked[0] !== '없음', 'buildDemoResponse(true) 차단 항목 존재');
+assert(filledCard && filledCard.blocked[0].includes('직결') || filledCard.blocked[0].includes('ESP32'), 'buildDemoResponse(true) 직결/ESP32 위험 문구');
+assert(filledCard && filledCard.blocked[0].includes('해제 조건'), 'buildDemoResponse(true) 차단 항목에 해제 조건 포함');
 
 // 7-3. 판매 페이지 5V vs IC 3.6V: mpu6050-conflict 시나리오
 assert(html.includes("case 'mpu6050-conflict':"), 'mpu6050-conflict 시나리오 존재');
@@ -157,19 +167,23 @@ assert(conflictCard !== null, 'mpu6050-conflict 시나리오 카드 생성 가�
 assert(conflictCard && conflictCard.electrical && conflictCard.electrical.conflicts && conflictCard.electrical.conflicts.length > 0, 'mpu6050-conflict에 5열 충돌표 존재');
 assert(conflictCard && conflictCard.electrical.items && conflictCard.electrical.items.some(it => it.status === 'blocked'), 'mpu6050-conflict에 blocked 게이트 존재');
 
-// 7-4. HC-SR04 Echo 5V 직결: hc-sr04-block 시나리오
-const hcCard = (function() {
-  const scCode = extractFunction(code, 'buildScenarioCard');
-  if (!scCode) return null;
-  eval(scCode);
-  const sc = eval('buildScenarioCard');
-  return sc('hc-sr04-block');
-})();
-assert(hcCard !== null, 'hc-sr04-block 시나리오 카드 생성 가능');
+// 7-4. HC-SR04 Echo 5V 직결: 공통 fixture 불변 조건
+const hcFixtureCode = extractFunction(code, 'buildHcSr04BlockFixture');
+assert(hcFixtureCode, 'buildHcSr04BlockFixture 함수 정의');
+eval(hcFixtureCode);
+const hcFixture = eval('buildHcSr04BlockFixture');
+assert(typeof hcFixture === 'function', 'buildHcSr04BlockFixture 호출 가능');
+const hcCard = hcFixture();
+assert(hcCard !== null, 'hc-sr04-block fixture 카드 생성 가능');
 assert(hcCard && hcCard.completeness === 'BLOCKED', 'hc-sr04-block 완성도 BLOCKED');
 assert(hcCard && hcCard.blocked && hcCard.blocked.length > 0 && hcCard.blocked[0] !== '없음', 'hc-sr04-block 차단 내용 존재');
-assert(hcCard && hcCard.electrical && hcCard.electrical.items && hcCard.electrical.items.some(it => it.status === 'blocked'), 'hc-sr04-block 전기 게이트에 blocked 존재');
+assert(hcCard && hcCard.electrical && hcCard.electrical.items && hcCard.electrical.items.length === 10, 'hc-sr04-block 전기 게이트 10개');
+assert(hcCard && hcCard.electrical && hcCard.electrical.items.filter(it => it.status === 'blocked').length === 1, 'hc-sr04-block 차단 게이트 1개');
+assert(hcCard && hcCard.electrical && hcCard.electrical.items.filter(it => it.status === 'verified').length === 0, 'hc-sr04-block verified 0개');
+assert(hcCard && hcCard.electrical && hcCard.electrical.items.filter(it => it.status === 'calc').length === 0, 'hc-sr04-block calc 0개');
 assert(hcCard && (hcCard.blocked[0].includes('직결') || hcCard.blocked[0].includes('ESP32')), 'hc-sr04-block 직결 금지/위험 문구');
+assert(hcCard && hcCard.next_actions && hcCard.next_actions.length <= 2, 'hc-sr04-block 다음 행동 최대 2개');
+assert(hcCard && hcCard.blocked[0].includes('해제 조건'), 'hc-sr04-block 차단 항목에 해제 조건 포함');
 
 // 8. 렌더링 실패 시 폴백 없음
 section('8. 렌더링 실패 시 다른 예시로 폴백하지 않음');
