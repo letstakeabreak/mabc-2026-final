@@ -552,6 +552,9 @@
     background: var(--surface-2);
     cursor: pointer;
     transition: background 0.15s, border-color 0.15s;
+    text-align: left;
+    font: inherit;
+    color: inherit;
   }
   .scenario-item:hover {
     background: var(--accent-soft);
@@ -559,6 +562,15 @@
   }
   .scenario-item:active {
     transform: translateY(1px);
+  }
+  .scenario-item:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .scenario-item[aria-pressed="true"] {
+    background: var(--accent-soft);
+    border-left-color: var(--accent);
+    border-color: var(--accent);
   }
   .scenario-name {
     font-size: 0.78rem;
@@ -643,18 +655,21 @@
         <span class="scenario-badge">예시</span>
       </div>
       <div class="scenario-list" id="scenarioList">
-        <div class="scenario-item" data-scenario="mpu6050-baseline">
-          <div class="scenario-name">MPU-6050 + GY-521 (3.3V)</div>
-          <div class="scenario-desc">식별이 정상적으로 진행되는 기준선 시나리오</div>
-        </div>
-        <div class="scenario-item" data-scenario="mpu6050-conflict">
-          <div class="scenario-name">MPU-6050 판매 페이지 5V 주장</div>
-          <div class="scenario-desc">판매 페이지 문구와 데이터시트 간 출처 충돌 예시</div>
-        </div>
-        <div class="scenario-item" data-scenario="hc-sr04-block">
-          <div class="scenario-name">HC-SR04 Echo 5V → GPIO 직결</div>
-          <div class="scenario-desc">ESP32를 가장 많이 태우는 안전 차단 사례</div>
-        </div>
+        <button type="button" class="scenario-item" data-scenario="mpu6050-baseline" aria-label="예시 시나리오: MPU-6050 + GY-521 (3.3V). 식별이 정상적으로 진행되는 기준선 시나리오">
+          <span class="scenario-badge">예시</span>
+          <span class="scenario-name">MPU-6050 + GY-521 (3.3V)</span>
+          <span class="scenario-desc">식별이 정상적으로 진행되는 기준선 시나리오</span>
+        </button>
+        <button type="button" class="scenario-item" data-scenario="mpu6050-conflict" aria-label="예시 시나리오: MPU-6050 판매 페이지 5V 주장. 판매 페이지 문구와 데이터시트 간 출처 충돌 예시">
+          <span class="scenario-badge">예시</span>
+          <span class="scenario-name">MPU-6050 판매 페이지 5V 주장</span>
+          <span class="scenario-desc">판매 페이지 문구와 데이터시트 간 출처 충돌 예시</span>
+        </button>
+        <button type="button" class="scenario-item" data-scenario="hc-sr04-block" aria-label="예시 시나리오: HC-SR04 Echo 5V → GPIO 직결. ESP32를 가장 많이 태우는 안전 차단 사례">
+          <span class="scenario-badge">예시</span>
+          <span class="scenario-name">HC-SR04 Echo 5V → GPIO 직결</span>
+          <span class="scenario-desc">ESP32를 가장 많이 태우는 안전 차단 사례</span>
+        </button>
       </div>
     </div>
     <div class="sidebar-divider"></div>
@@ -697,7 +712,7 @@
           <span class="status-text" id="stateText">식별 근거 수집 중 — 관찰 사실을 입력해 주세요.</span>
           <span class="spacer"></span>
           <span class="prereq" id="stagePrereq"></span>
-          <span class="pill" id="modePill"><span class="dot"></span> 시뮬레이션(예시)</span>
+          <span class="pill" id="modePill"><span class="dot"></span> 시연(예시)</span>
         </div>
 
         <form id="inputForm" novalidate>
@@ -734,7 +749,7 @@
             <button type="submit" id="submitBtn" class="primary">관찰 사실 반영</button>
             <button type="button" class="secondary" id="newAnalysisBtn">새로 분석하기 — 입력·출력 초기화</button>
           </div>
-          <div class="hint" id="inputHint">예시로 해보기는 고정된 시나리오(예시)입니다. 관찰 사실을 반영하면 시연용 카드 데이터가 표시됩니다.</div>
+          <div class="hint" id="inputHint">예시로 해보기는 고정된 시나리오(예시)입니다. 관찰 사실을 반영하면 시연용 카드 데이터가 표시됩니다. 실제 스킬 호출은 /api/card 프록시를 통해 연동되며, 현재는 시연 데이터로 표시됩니다.</div>
         </form>
       </section>
 
@@ -799,7 +814,7 @@
       카드 상태: <span class="mono">PROVISIONAL / BLOCKED / VERIFIED</span>, 단계: <span class="mono">0/5 ~ 5/5</span>.
       계약 항목 근거: IC·캐리어 분리(항목 4), 출처 우선순위(항목 8), 절대 최대 정격/출처 충돌 5열 표(항목 9·10), 출력 계약(항목 2), 상태 모델(항목 7).
       아직 실제 부품은 연결·측정하지 않았으며, 카드 5/5는 전원 인가나 런타임 통합 시험 완료가 아닙니다.
-      현재는 <strong>[/api/card] 연동 중</strong>이며, 실제 스킬 호출 응답이 들어오면 시뮬레이션 대신 실제 응답으로 표시됩니다. 웹 검색 구역은 저작권 표시 문제로 제거됐습니다.
+      현재는 <strong>[/api/card] 프록시가 준비돼 있으며</strong>, 실제 스킬 호출 응답이 들어오면 시연 데이터 대신 실제 응답으로 표시됩니다. 웹 검색 구역은 저작권 표시 문제로 제거됐습니다.
     </footer>
 
   </main>
@@ -1017,7 +1032,7 @@
       handleApiError(apiError);
       var demo = buildDemoResponse(true);
       updateDisplayFromCard(demo, true, 'demo');
-      inputHint.textContent = '실제 스킬 호출이 불가하여 예시 응답을 표시했습니다. 이는 실제 판정 결과가 아니라 예시입니다.';
+      inputHint.textContent = '실제 스킬 호출이 불가하여 시연 데이터를 표시했습니다. 이는 실제 판정 결과가 아니라 예시입니다.';
       return;
     }
 
@@ -1051,14 +1066,14 @@
     }
   }
   exampleBtn.addEventListener('click', function() {
-    partName.value = 'GY-521 (MPU-6050 IC 포함 모듈)';
+    partName.value = 'HC-SR04 초음파 센서';
     targetBoard.value = 'ESP32 30핀 개발보드';
-    observations.value = '파란색 보드. 칩에 MPU-6050 글자 보임. 핀 4개. I2C로 가속도/자이로 측정 목적. 3.3V 전원 사용 예정.';
+    observations.value = '파란 기판, 4핀. Echo 핀을 ESP32 GPIO에 직결할 예정. 거리 측정 목적.';
     photoLink.value = '';
-    powerInfo.value = '3.3V';
+    powerInfo.value = '5V VCC';
     var resp = buildDemoResponse(true);
     updateDisplayFromCard(resp, true, 'demo');
-    toast('예시로 해보기의 시나리오 B 고정 카드"가 채워졌습니다. 이는 실제 판정 결과가 아니라 예시입니다.');
+    toast('예시로 해보기의 HC-SR04 위험 시나리오가 채워졌습니다. 이는 실제 판정 결과가 아니라 예시입니다.');
   });
 
   function escapeHTML(s) {
@@ -1102,39 +1117,32 @@
       stage: 3,
       stage_title: '전기 호환성 판정',
       observed: [
-        '부품/모듈 이름: GY-521 (MPU-6050 IC 포함 모듈)',
+        '부품/모듈 이름: HC-SR04 초음파 센서',
         '타겟 보드: ESP32 30핀 개발보드',
-        '관찰 사실: 파란색 보드. 칩에 MPU-6050 글자 보임. 핀 4개. I2C로 가속도/자이로 측정 목적. 3.3V 전원 사용 예정.',
+        '관찰 사실: 파란 기판, 4핀. Echo 핀을 ESP32 GPIO에 직결할 예정. 거리 측정 목적.',
         '사진/구매 링크: 없음',
-        '사용 전원/전압: 3.3V',
+        '사용 전원/전압: 5V VCC'
       ],
       identification: {
-        ic: 'MPU-6050 (관찰된 글자로는 후보 수준, 제조사·리비전 미확인)',
-        carrier: 'GY-521 (MPU-6050이 들어간 파란색 브레이크아웃 모듈로 보임, 리비전 미확인)',
-        target: 'ESP32 30핀 개발보드 (ESP32-WROOM-32 탑재 모듈로 추정, 정확한 탑재 모듈·전원 레일 미확인)',
+        ic: '미확인 (내부 IC 표식·회로도 근거 없음)',
+        carrier: 'HC-SR04 계열 초음파 센서 모듈',
+        target: 'ESP32 30핀 개발보드'
       },
       sources: ['없음'],
       electrical: {
         items: [
-          { gate: '모듈 입력 전압 (VIN/캐리어 입력)', status: 'unconfirmed', evidence: '모듈 VIN·캐리어 입력 전압 범위를 출처에서 분리 확인하지 않음' },
-          { gate: 'IC 동작 전압 (절대 최대 정격과 구분)', status: 'unconfirmed', evidence: '관찰된 글자(MPU-6050)만으로는 제조사·리비전 미확인, 데이터시트 미대조' },
-          { gate: '로직 레벨 (GPIO HIGH/LOW, 3.3V vs 5V)', status: 'unconfirmed', evidence: 'ESP32 GPIO 3.3V 로직, HC-SR04급 5V 출력 모듈이면 레벨 시프터 필요 — 대상 모듈 미확인' },
-          { gate: '일반 소비 전류', status: 'unconfirmed', evidence: '모듈/IC 소비 전류 출처를 아직 확인하지 않음' },
-          { gate: '최대·피크 소비 전류', status: 'unconfirmed', evidence: '피크 전류 값 미확인' },
-          { gate: '대상 보드 공급 한계 (GPIO/레일 전류)', status: 'unconfirmed', evidence: 'ESP32 GPIO/레일 공급 한계를 이 조합 기준으로 확인하지 않음' },
-          { gate: '전원/GND 경로 (공통 그라운드 여부)', status: 'unconfirmed', evidence: '공통 GND 연결 여부를 아직 확인하지 않음' },
-          { gate: '직결/레벨 변환/보호 필요 여부', status: 'unconfirmed', evidence: '확인된 모듈의 입출력 전압에 따라 레벨 시프터/보호 필요 여부 결정 — 아직 미확인' },
-          { gate: '극성·핀 방향 (VCC/GND 극성, 핀 배치 방향)', status: 'unconfirmed', evidence: 'VCC/GND 극성 및 핀 배치 방향 미확인 — 전원 인가 전 확인 필요' },
-          { gate: '버스 게이트 (I2C 주소, 풀업, 버스 전압, 다중 장치)', status: 'unconfirmed', evidence: 'I2C 주소·풀업·버스 전압·다중 장치 여부 미확인' },
+          { gate: 'HC-SR04 VCC 공급 전압', status: 'unconfirmed', evidence: '출처 미확인 — 5V 사용 주장만 있음, 사양서/데이터시트 미대조' },
+          { gate: 'HC-SR04 Echo 출력 전압', status: 'unconfirmed', evidence: '출처 미확인 — 5V TTL 출력으로 추정되나 확인 문헌 없음' },
+          { gate: 'ESP32 GPIO 입력 내성', status: 'unconfirmed', evidence: '출처 미확인 — ESP32 GPIO 절대 최대 정격 3.3V 근거는 확인 문헌 없음' }
         ],
         conflicts: []
       },
       blocked: ['없음'],
       next_actions: [
-        '칩 글자와 핀 이름이 보이는 앞뒤 사진을 준비한다.',
-        '구매 링크나 정확한 제품명을 알려준다.',
+        'Echo 핀과 ESP32 GPIO 사이에 레벨 시프터를 삽입한다.',
+        '3.3V 전용 초음파 센서(HC-SR04 3.3V 버전 또는 대안)로 교체 검토.'
       ],
-      completeness: 'PROVISIONAL',
+      completeness: 'BLOCKED'
     };
   }
 
@@ -1483,14 +1491,14 @@
       stateHint = '아직 확인된 근거가 충분하지 않습니다. 출처·전기 조건을 더 채우면 단계가 올라갈 수 있습니다.';
     }
 
-    var modeLabel = '시뮬레이션';
-    var modeHint = '시뮬레이션 응답입니다. 실제 판정 결과가 아닙니다.';
+    var modeLabel = '데모 응답';
+    var modeHint = '고정된 시연 데이터입니다. 실제 판정 결과가 아니라 예시입니다.';
     if (source === 'api') {
       modeLabel = '실제 응답';
       modeHint = '스킬 호출 결과입니다. 실제 판정 결과입니다.';
     } else if (source === 'demo') {
-      modeLabel = '시뮬레이션 (예시)';
-      modeHint = '예시 시나리오 응답입니다. 실제 판정 결과가 아니라 예시이며, 고정된 시연 데이터입니다.';
+      modeLabel = '데모 응답';
+      modeHint = '고정된 시연 데이터입니다. 실제 판정 결과가 아니라 예시이며, 고정된 시나리오 응답입니다.';
     }
     stateText.textContent = stateHint;
     modePill.innerHTML = '<span class="dot"></span> ' + modeLabel;
@@ -1506,7 +1514,7 @@
     sectionEls.completeness.innerHTML = completenessHTML(card);
 
     inputHint.textContent = filled
-      ? '일곱 구역 출력과 카드 상태 모델을 그대로 보여줍니다. 연동 전에는 시뮬레이션 응답이며, 실제 판정 결과가 아닙니다.'
+      ? '일곱 구역 출력과 카드 상태 모델을 그대로 보여줍니다. 현재는 시연 데이터이며, /api/card 응답이 있으면 실제 판정 결과로 표시됩니다.'
       : '아직 관찰 사실이 없습니다. 아래 입력을 채워 반영하세요.';
   }
 
@@ -1654,7 +1662,7 @@
 
   // ---------------- 입력 폼 상태 반영 ----------------
   function updateFromForm(filled, source) {
-    // 현재는 /api/card 연동 전이므로, buildDemoResponse를 사용합니다.
+    // 현재는 /api/card 프록시가 준비돼 있으며, 실제 응답이 없으면 buildDemoResponse를 사용합니다.
     var resp = buildDemoResponse(filled);
     updateDisplayFromCard(resp, filled, source || (filled ? 'demo' : undefined));
   }
@@ -1884,20 +1892,20 @@
             '사용 전원/전압: 5V VCC'
           ],
           identification: {
-            ic: 'HC-SR04 초음파 송수신 IC (기판 표식 기준, 정확한 리비전 미확인)',
-            carrier: 'HC-SR04 파란색 4핀 브레이크아웃 모듈',
+            ic: '미확인 (내부 IC 표식·회로도 근거 없음)',
+            carrier: 'HC-SR04 계열 초음파 센서 모듈',
             target: 'ESP32 30핀 개발보드'
           },
           sources: ['없음'],
           electrical: {
             items: [
-              { gate: 'HC-SR04 VCC', status: 'verified', evidence: '5V 공급 (사양서 기준)' },
-              { gate: 'HC-SR04 Echo 출력', status: 'blocked', evidence: '5V TTL 출력 — ESP32 GPIO 3.3V 초과' },
-              { gate: 'ESP32 GPIO 입력 내성', status: 'verified', evidence: 'ESP32 GPIO 절대 최대 정격: 3.3V (5V 내성 없음)' }
+              { gate: 'HC-SR04 VCC 공급 전압', status: 'unconfirmed', evidence: '출처 미확인 — 5V 사용 주장만 있음, 사양서/데이터시트 미대조' },
+              { gate: 'HC-SR04 Echo 출력 전압', status: 'blocked', evidence: '5V TTL 출력으로 추정되나 확인 문헌 없음 — ESP32 GPIO 3.3V 초과 위험' },
+              { gate: 'ESP32 GPIO 입력 내성', status: 'unconfirmed', evidence: '출처 미확인 — ESP32 GPIO 절대 최대 정격 3.3V 근거는 확인 문헌 없음' }
             ],
             conflicts: []
           },
-          blocked: ['Echo 출력 5V — ESP32 GPIO는 3.3V 초과 입력 허용 안 됨. 직결 시 ESP32 손상 가능. 레벨 시프터 또는 3.3V 전용 센서 필요.'],
+          blocked: ['Echo 출력이 5V로 추정되나 확인 문헌 없음 — ESP32 GPIO는 3.3V 초과 입력 허용 안 됨. 직결 시 ESP32 손상 가능. 레벨 시프터 또는 3.3V 전용 센서 필요.'],
           next_actions: [
             'Echo 핀과 ESP32 GPIO 사이에 레벨 시프터를 삽입한다.',
             '3.3V 전용 초음파 센서(HC-SR04 3.3V 버전 또는 대안)로 교체 검토.'
@@ -1909,11 +1917,12 @@
   }
 
   var scenarioList = document.getElementById('scenarioList');
+  var activeScenarioId = null;
   if (scenarioList) {
     scenarioList.addEventListener('click', function(e) {
-      var item = e.target.closest('.scenario-item');
-      if (!item) return;
-      var id = item.getAttribute('data-scenario');
+      var btn = e.target.closest('.scenario-item');
+      if (!btn) return;
+      var id = btn.getAttribute('data-scenario');
       var sc = SCENARIOS[id];
       if (!sc) return;
       partName.value = sc.form.partName;
@@ -1925,6 +1934,11 @@
       if (card) {
         updateDisplayFromCard(card, true, 'demo');
       }
+      activeScenarioId = id;
+      scenarioList.querySelectorAll('.scenario-item').forEach(function(b) {
+        var isBtn = b;
+        isBtn.setAttribute('aria-pressed', String(b.getAttribute('data-scenario') === id));
+      });
       toast('예시 시나리오 적용: ' + sc.label);
     });
   }
