@@ -1132,7 +1132,7 @@
       electrical: {
         items: [
           { gate: 'HC-SR04 VCC 공급 전압', status: 'unconfirmed', evidence: '출처 미확인 — 5V 사용 주장만 있음, 사양서/데이터시트 미대조' },
-          { gate: 'HC-SR04 Echo 출력 전압', status: 'unconfirmed', evidence: '출처 미확인 — 5V TTL 출력으로 추정되나 확인 문헌 없음' },
+          { gate: 'HC-SR04 Echo 출력 전압', status: 'blocked', evidence: 'Echo 출력 전압이 확인될 때까지 ESP32 GPIO 직결 금지 — 미확인 상태에서 5V 직통은 ESP32 손상 위험' },
           { gate: 'ESP32 GPIO 입력 내성', status: 'unconfirmed', evidence: '출처 미확인 — ESP32 GPIO 절대 최대 정격 3.3V 근거는 확인 문헌 없음' }
         ],
         conflicts: []
@@ -1513,9 +1513,11 @@
     sectionEls.next.innerHTML = nextHTML(card.next_actions, 2);
     sectionEls.completeness.innerHTML = completenessHTML(card);
 
-    inputHint.textContent = filled
-      ? '일곱 구역 출력과 카드 상태 모델을 그대로 보여줍니다. 현재는 시연 데이터이며, /api/card 응답이 있으면 실제 판정 결과로 표시됩니다.'
-      : '아직 관찰 사실이 없습니다. 아래 입력을 채워 반영하세요.';
+    inputHint.textContent = source === 'api'
+      ? 'Solar Pro 4와 component-integration-card 스킬의 실제 응답을 표시합니다.'
+      : source === 'demo'
+        ? '현재는 시연 데이터이며, 실제 판정 결과가 아닙니다.'
+        : '아직 관찰 사실이 없습니다. 아래 입력을 채워 반영하세요.';
   }
 
   // ---------------- 전기 조건 구역 전용 렌더러 ----------------
