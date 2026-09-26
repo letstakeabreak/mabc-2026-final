@@ -15,6 +15,7 @@ const html = fs.readFileSync(HTML_PATH, 'utf-8');
 
 // === 유틸 ===
 function assert(condition, message) {
+  assertCount++;
   if (!condition) {
     console.error('FAIL:', message);
     process.exitCode = 1;
@@ -27,6 +28,7 @@ function assert(condition, message) {
 
 let testCount = 0;
 let passCount = 0;
+let assertCount = 0;
 function section(title) {
   testCount++;
   console.log(`\n=== 테스트 ${testCount}: ${title} ===`);
@@ -74,7 +76,7 @@ global.escapeHTML = function(s) {
 };
 global.toast = function() {};
 
-const fnNames = ['escapeHTML', 'electricalStatusClass', 'parseElectricalLines', 'electricalHTML', 'sectionHTML', 'buildHcSr04BlockFixture', 'buildDemoResponse', 'nextHTML', 'identifyHTML', 'completenessHTML', 'updateDisplayFromCard'];
+const fnNames = ['escapeHTML', 'electricalStatusClass', 'parseElectricalLines', 'electricalHTML', 'buildIntegrationSummaryHTML', 'sectionHTML', 'buildHcSr04BlockFixture', 'buildDemoResponse', 'nextHTML', 'identifyHTML', 'completenessHTML', 'updateDisplayFromCard'];
 const fns = {};
 fnNames.forEach(name => {
   const fnCode = extractFunction(code, name);
@@ -224,10 +226,68 @@ assert(typeof fns.identifyHTML === 'function', 'identifyHTML eval 성공');
 assert(typeof fns.completenessHTML === 'function', 'completenessHTML eval 성공');
 assert(capturedErrors.length === 0, `console.error 0건 (현재 ${capturedErrors.length}건)`);
 
+// 14. 2026-09-26 수정분 회귀 방지 (문자열 존재가 아니라 실제 호출 결과로 확인)
+section('14. 빈 구역·3/5 판정·실패 경로 정리');
+
+assert(fns.sectionHTML([]).includes('없음'), 'sectionHTML([])이 빈 문자열이 아니라 "- 없음"');
+
+function gates(counts) {
+  const items = [];
+  Object.keys(counts).forEach(st => {
+    for (let i = 0; i < counts[st]; i++) items.push({ gate: st + i, status: st, evidence: 'e' });
+  });
+  return items;
+}
+const unresolvedOut = fns.electricalHTML({ items: gates({ verified: 1, unconfirmed: 2 }), conflicts: [] }, 3);
+assert(!unresolvedOut.includes('3/5 통과 —'), '미확인이 남으면 3/5 통과로 표시하지 않음 (SKILL.md 카드 3/5 종료 증거)');
+assert(unresolvedOut.includes('미확인 2건'), '미통과 원인에 미확인 건수 표시');
+const conflictOnly = fns.electricalHTML({ items: gates({ verified: 2 }),
+  conflicts: [{ source: 's', claim: 'c', target: 't', conflict: 'x', unblock: 'u' }] }, 3);
+assert(conflictOnly.includes('출처 충돌 1건') && !conflictOnly.includes('차단 0건'), '미통과 원인에 실제로 남은 것만 표시');
+const allResolved = fns.electricalHTML({ items: gates({ verified: 3, calc: 1 }), conflicts: [] }, 3);
+assert(allResolved.includes('3/5 통과 —'), '확인·계산만 남으면 3/5 통과');
+
+// submitToApi: 성공·실패 어느 경로로 끝나도 버튼과 타이머가 정리돼야 한다
+async function runSubmit(fetchImpl) {
+  const src = extractFunction(code, 'submitToApi');
+  const saved = { setTimeout: global.setTimeout, setInterval: global.setInterval, clearInterval: global.clearInterval };
+  const state = { cleared: 0, rendered: null };
+  global.setTimeout = () => 0;
+  global.setInterval = () => 1;
+  global.clearInterval = () => { state.cleared++; };
+  global.fetch = fetchImpl;
+  const field = v => ({ value: v });
+  Object.assign(global, {
+    partName: field('HC-SR04'), targetBoard: field(''), observations: field('x'), photoLink: field(''), powerInfo: field(''),
+    submitBtn: { disabled: false, textContent: '관찰 사실 반영' },
+    inputHint: { textContent: '' }, progressEl: { style: { display: '' } }, progressVisible: false,
+    updateProgress: () => {}, handleApiError: () => {},
+    updateDisplayFromCard: (c, f, source) => { state.rendered = source; },
+  });
+  try {
+    eval('async ' + src);
+    await eval('submitToApi')();
+  } finally {
+    Object.assign(global, saved);
+  }
+  return { btn: global.submitBtn, ...state };
+}
+const json = (status, body) => async () => ({ ok: status < 400, status, json: async () => body });
+const settled = r => !r.btn.disabled && r.btn.textContent === '관찰 사실 반영' && r.cleared === 1;
+
+(async () => {
+  const r502 = await runSubmit(json(502, { error: 'upstage_empty_response' }));
+  assert(settled(r502), 'API가 502 JSON 에러를 줘도 버튼·타이머 정리');
+  assert(r502.rendered === 'demo', '502 에러 시 데모 응답으로 폴백 (배지로 구분)');
+  const rNet = await runSubmit(async () => { throw new Error('offline'); });
+  assert(settled(rNet), '네트워크 오류에서도 버튼·타이머 정리');
+  const rOk = await runSubmit(json(200, { ok: true, card: fns.buildDemoResponse(true) }));
+  assert(settled(rOk) && rOk.rendered === 'api', '성공 경로는 그대로 정리되고 실제 응답으로 표시');
+
 // === 결과 요약 ===
 console.log('\n=============================');
-console.log(`총 테스트: ${testCount}`);
-console.log(`성공: ${passCount}/${testCount}`);
+console.log(`구역: ${testCount}개`);
+console.log(`단언: ${passCount}/${assertCount} 통과`);
 console.log(`console.error 캡처: ${capturedErrors.length}건`);
 if (capturedErrors.length > 0) {
   console.log('캡처된 오류:');
@@ -243,3 +303,4 @@ if (process.exitCode === 1) {
 
 // 콘솔.error 복원
 console.error = originalConsoleError;
+})();

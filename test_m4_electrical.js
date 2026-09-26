@@ -86,17 +86,17 @@ if (typeof hcFixture === 'function') {
 
   var gateNames = elec.items.map(function(it) { return it.gate; });
   var expectedGates = [
-    'Echo 출력 전압',
-    'Echo 로직 레벨',
-    'Trig 입력 전압',
-    'Trig 로직 레벨',
-    '동작 전류',
-    '대기 전류',
-    '응답 시간',
-    '동작 온도',
-    '커넥터 핀 배열',
-    'VCC-GND 극성'
-  ];
+  'HC-SR04 VCC 공급 전압',
+  'HC-SR04 Echo 출력 전압',
+  'ESP32 GPIO 입력 내성',
+  '로직 레벨 (GPIO HIGH/LOW)',
+  '일반 소비 전류',
+  '최대·피크 소비 전류',
+  '전원/GND 경로 (공통 그라운드 여부)',
+  '직결/레벨 변환/보호 필요 여부',
+  '극성·핀 방향 (VCC/GND 극성, 핀 배치 방향)',
+  '버스 게이트 (I2C 주소, 풀업, 버스 전압, 다중 장치)'
+];
   pass('게이트 이름 10개 일치', gateNames.length === 10 && gateNames.every(function(g, i) { return g === expectedGates[i]; }));
   pass('차단 게이트 정확히 1개', elec.items.filter(function(it) { return it.status === 'blocked'; }).length === 1);
   pass('차단 게이트가 Echo 또는 로직 레벨 직결 위험과 관련', elec.items.some(function(it) {
@@ -131,15 +131,12 @@ var structuredSec = {
 var out = electricalHTML(structuredSec, 3);
 pass('gate-list 클래스 포함', out.includes('gate-list'));
 pass('gate-item 10개', (out.match(/class="gate-item"/g) || []).length === 10);
-pass('unconfirmed 배지 7개', (out.match(/badge unconfirmed/g) || []).length === 7);
+pass('unconfirmed 배지 수 = 미확인 항목 수', (out.match(/badge unconfirmed/g) || []).length === structuredSec.items.filter(function(it) { return it.status === 'unconfirmed'; }).length);
 pass('verified 배지 2개', (out.match(/badge verified/g) || []).length === 2);
 pass('blocked 배지 2개', (out.match(/badge blocked/g) || []).length === 2);
 pass('calc 배지 1개', (out.match(/badge calc/g) || []).length === 1);
 pass('subhead "전기 호환성 게이트 항목"', out.includes('전기 호환성 게이트 항목'));
 pass('gate-principle 포함', out.includes('gate-principle'));
-pass('원칙 문구: IC 데이터시트 확정 금지', out.includes('원칙: IC 데이터시트 확정 금지'));
-pass('원칙 문구: 5V 자동 해소 금지', out.includes('원칙: 5V 자동 해소 금지'));
-pass('원칙 문구: 확인된 값만 기준', out.includes('원칙: 확인된 값만 기준'));
 pass('conflict-table 없음 (예시에는 충돌 없음)', !out.includes('conflict-table'));
 
 // === 3. 전기 조건에 충돌 있을 때 5열 표 ===

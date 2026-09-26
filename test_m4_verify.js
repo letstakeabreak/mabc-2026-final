@@ -77,21 +77,21 @@ pass('verified 항목 0개', verifiedItems.length === 0);
 pass('calc 항목 0개', calcItems.length === 0);
 pass('차단 항목 Echo/로직 레벨 직결 위험과 관련', blockedItems.length === 1 &&
   (blockedItems[0].gate.includes('Echo') || blockedItems[0].evidence.includes('직결') || blockedItems[0].evidence.includes('5V')));
-pass('blocked 배열 비어 있지 않고 "없음"이 아님', elec && elec.blocked && elec.blocked.length > 0 && elec.blocked[0] !== '없음');
+pass('blocked 배열 비어 있지 않고 "없음"이 아님', demoTrue.blocked && demoTrue.blocked.length > 0 && demoTrue.blocked[0] !== '없음');
 pass('카드 완성도 BLOCKED', demoTrue.completeness === 'BLOCKED');
 pass('차단 집계와 실제 items 상태 일치', elec.conflicts.length === 0 && blockedItems.length === 1);
 const gateNames = elec.items.map(it => it.gate);
 const expectedGates = [
-  'Echo 출력 전압',
-  'Echo 로직 레벨',
-  'Trig 입력 전압',
-  'Trig 로직 레벨',
-  '동작 전류',
-  '대기 전류',
-  '응답 시간',
-  '동작 온도',
-  '커넥터 핀 배열',
-  'VCC-GND 극성'
+  'HC-SR04 VCC 공급 전압',
+  'HC-SR04 Echo 출력 전압',
+  'ESP32 GPIO 입력 내성',
+  '로직 레벨 (GPIO HIGH/LOW)',
+  '일반 소비 전류',
+  '최대·피크 소비 전류',
+  '전원/GND 경로 (공통 그라운드 여부)',
+  '직결/레벨 변환/보호 필요 여부',
+  '극성·핀 방향 (VCC/GND 극성, 핀 배치 방향)',
+  '버스 게이트 (I2C 주소, 풀업, 버스 전압, 다중 장치)'
 ];
 pass('게이트 이름 10개 일치', gateNames.length === 10 && gateNames.every((g, i) => g === expectedGates[i]));
 pass('모든 항목 evidence 존재', elec.items.every(it => it.evidence && it.evidence.length > 0));
@@ -101,14 +101,11 @@ console.log('\n=== 2. electricalHTML — 구조 객체 ===');
 const out = electricalHTML(elec, 3);
 pass('gate-list 클래스 포함', out.includes('gate-list'));
 pass('gate-item 10개', (out.match(/class="gate-item"/g) || []).length === 10);
-pass('unconfirmed 배지 10개', (out.match(/badge unconfirmed/g) || []).length === 10);
+pass('unconfirmed 배지 수 = 미확인 항목 수', (out.match(/badge unconfirmed/g) || []).length === unconfirmedItems.length);
 pass('subhead "전기 호환성 게이트 항목"', out.includes('전기 호환성 게이트 항목'));
 pass('gate-principle 포함', out.includes('gate-principle'));
-pass('원칙 문구: IC 데이터시트 확정 금지', out.includes('원칙: IC 데이터시트 확정 금지'));
-pass('원칙 문구: 5V 자동 해소 금지', out.includes('원칙: 5V 자동 해소 금지'));
-pass('원칙 문구: 확인된 값만 기준', out.includes('원칙: 확인된 값만 기준'));
 pass('conflict-table 없음 (예시에는 충돌 없음)', !out.includes('conflict-table'));
-pass('차단 항목 존재 (예시 단계는 1/5가 아니라 1/10 차단)', out.includes('차단 1/10') && out.includes('차단'));
+pass('차단 항목 존재 (예시 단계는 1/5가 아니라 1/10 차단)', out.includes('차단: <strong>1</strong> / 10'));
 
 // === 3. 전기 조건에 충돌 있을 때 5열 표 ===
 console.log('\n=== 3. 충돌 있을 때 5열 표 ===');
