@@ -1,0 +1,12 @@
+{
+  "name": "Observe paid component card API",
+  "conditionGroup": [
+    {
+      "conditions": [
+        { "type": "path", "op": "inc", "value": ["/api/card", "/api/card.js"] },
+        { "type": "method", "op": "eq", "value": "POST" }
+      ]
+    }
+  ],
+  "action": { "mitigate": { "action": "log" } }
+}

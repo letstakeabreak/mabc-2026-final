@@ -6,26 +6,130 @@
 import fs from 'fs';
 import path from 'path';
 
-export default async function handler(req, res) {
-  try { process.loadEnvFile('.env'); } catch (e) {
-    console.warn('api/card: .env 로드 실패 (로컬 테스트 시 .env 파일 확인)');
+const MAX_REQUEST_BYTES = 16 * 1024;
+const MAX_RESPONSE_BYTES = 128 * 1024;
+const UPSTREAM_TIMEOUT_MS = 25_000;
+const FIELD_LIMITS = { partName: 300, targetBoard: 300, observations: 4000, photoLink: 2048, powerInfo: 500 };
+
+function isRecord(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function readInput(req) {
+  const contentLength = req.headers?.['content-length'];
+  if (contentLength !== undefined && (!/^\d+$/.test(contentLength) || Number(contentLength) > MAX_REQUEST_BYTES)) {
+    return { status: 413, error: 'request_too_large' };
   }
+  const contentType = req.headers?.['content-type'];
+  if (typeof contentType !== 'string' || !/^application\/json(?:\s*;|$)/i.test(contentType)) {
+    return { status: 415, error: 'json_required' };
+  }
+  // Browser abuse guard only: this public endpoint still needs the platform's
+  // distributed rate limit. Origin is not an authentication credential.
+  const origin = req.headers?.origin;
+  const host = req.headers?.host;
+  if (req.headers?.['sec-fetch-site'] === 'cross-site') return { status: 403, error: 'origin_not_allowed' };
+  if (origin !== undefined) {
+    try {
+      const parsed = new URL(origin);
+      const local = /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host || '');
+      if (parsed.origin !== origin || parsed.host !== host || parsed.protocol !== (local ? 'http:' : 'https:')) {
+        return { status: 403, error: 'origin_not_allowed' };
+      }
+    } catch {
+      return { status: 403, error: 'origin_not_allowed' };
+    }
+  }
+  if (!isRecord(req.body)) return { status: 400, error: 'invalid_request_body' };
+  try {
+    if (Buffer.byteLength(JSON.stringify(req.body), 'utf8') > MAX_REQUEST_BYTES) {
+      return { status: 413, error: 'request_too_large' };
+    }
+  } catch {
+    return { status: 400, error: 'invalid_request_body' };
+  }
+  if (Object.keys(req.body).some(key => !Object.hasOwn(FIELD_LIMITS, key))) {
+    return { status: 400, error: 'invalid_request_fields' };
+  }
+  const input = {};
+  for (const [field, limit] of Object.entries(FIELD_LIMITS)) {
+    const value = req.body[field] === undefined ? '' : req.body[field];
+    if (typeof value !== 'string' || value.length > limit || value.includes('\u0000')) {
+      return { status: 400, error: 'invalid_request_fields' };
+    }
+    input[field] = value.trim();
+  }
+  if (!Object.values(input).some(Boolean)) return { status: 400, error: 'empty_request' };
+  if (input.photoLink) {
+    try {
+      const url = new URL(input.photoLink);
+      if (!['https:', 'http:'].includes(url.protocol) || url.username || url.password) throw new Error();
+    } catch {
+      return { status: 400, error: 'invalid_photo_link' };
+    }
+  }
+  return { input };
+}
+
+async function readUpstreamJson(response) {
+  if (Number(response.headers.get('content-length')) > MAX_RESPONSE_BYTES) {
+    await response.body?.cancel();
+    throw new Error('invalid_upstream_response');
+  }
+  if (!response.body) throw new Error('invalid_upstream_response');
+  const reader = response.body.getReader();
+  const chunks = [];
+  let size = 0;
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > MAX_RESPONSE_BYTES) {
+        await reader.cancel();
+        throw new Error('invalid_upstream_response');
+      }
+      chunks.push(Buffer.from(value));
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  return JSON.parse(Buffer.concat(chunks, size).toString('utf8'));
+}
+
+function validCard(card) {
+  const text = value => typeof value === 'string' && value.length <= 4000;
+  const texts = value => Array.isArray(value) && value.length <= 100 && value.every(text);
+  return isRecord(card)
+    && Number.isInteger(card.stage) && card.stage >= 0 && card.stage <= 5 && text(card.stage_title)
+    && texts(card.observed) && texts(card.sources) && texts(card.blocked)
+    && texts(card.next_actions) && card.next_actions.length <= 2
+    && ['PROVISIONAL', 'BLOCKED', 'VERIFIED'].includes(card.completeness)
+    && isRecord(card.identification) && ['ic', 'carrier', 'target'].every(key => text(card.identification[key]))
+    && isRecord(card.electrical) && Array.isArray(card.electrical.items) && card.electrical.items.length <= 100
+    && card.electrical.items.every(item => isRecord(item) && text(item.gate)
+      && ['verified', 'calc', 'unconfirmed', 'blocked'].includes(item.status)
+      && (item.evidence === undefined || text(item.evidence)))
+    && Array.isArray(card.electrical.conflicts) && card.electrical.conflicts.length <= 100
+    && card.electrical.conflicts.every(item => isRecord(item)
+      && ['source', 'claim', 'target', 'conflict', 'unblock'].every(key => text(item[key])));
+}
+
+export default async function handler(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
   if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: 'method_not_allowed' });
   }
-
+  const checked = readInput(req);
+  if (checked.error) return res.status(checked.status).json({ error: checked.error });
   const apiKey = process.env.UPSTAGE_API_KEY;
   if (!apiKey || apiKey.trim().length === 0) {
     console.error('api/card: UPSTAGE_API_KEY가 설정되지 않았습니다.');
     return res.status(500).json({ error: 'upstage_api_key_not_configured' });
   }
-
-  const body = req.body;
-  if (!body || typeof body !== 'object') {
-    return res.status(400).json({ error: 'invalid_request_body' });
-  }
-
-  const { partName, targetBoard, observations, photoLink, powerInfo } = body;
+  const { partName, targetBoard, observations, photoLink, powerInfo } = checked.input;
 
   // SKILL.md 원문 + references/ 단계별 규칙을 모두 읽어서 system 프롬프트로 사용
   // SKILL.md 자체는 수정하지 않고, 여기서 읽어 병합만 한다.
@@ -161,8 +265,11 @@ blocked 에 내용이 있으면 completeness 는 반드시 "BLOCKED" 이다.
 
   const upstageUrl = 'https://api.upstage.ai/v1/chat/completions';
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
   try {
     const upstageRes = await fetch(upstageUrl, {
+      signal: controller.signal,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -173,27 +280,22 @@ blocked 에 내용이 있으면 completeness 는 반드시 "BLOCKED" 이다.
 
     if (!upstageRes.ok) {
       const status = upstageRes.status;
-      let detail = '알 수 없는 오류';
-      try {
-        const errBody = await upstageRes.text();
-        detail = errBody.slice(0, 500);
-      } catch (e) {
-        detail = `상태 코드: ${status}`;
-      }
-      console.error(`api/card: Upstage API 오류 ${status}: ${detail}`);
+      await upstageRes.body?.cancel();
+      console.error(`api/card: Upstage API 오류 ${status}`);
       return res.status(502).json({
         error: 'upstage_api_error',
         status,
       });
     }
 
-    const data = await upstageRes.json();
+    const data = await readUpstreamJson(upstageRes);
+    if (!isRecord(data)) return res.status(502).json({ error: 'invalid_upstream_response' });
     const choices = data.choices;
     if (!Array.isArray(choices) || choices.length === 0) {
       return res.status(502).json({ error: 'upstage_empty_response' });
     }
 
-    const content = choices[0].message && choices[0].message.content;
+    const content = choices[0]?.message?.content;
     if (typeof content !== 'string' || content.trim().length === 0) {
       return res.status(502).json({ error: 'upstage_empty_content' });
     }
@@ -202,13 +304,10 @@ blocked 에 내용이 있으면 completeness 는 반드시 "BLOCKED" 이다.
     try {
       card = JSON.parse(content);
     } catch (e) {
-      console.error('api/card: JSON 파싱 실패', e.message);
-      return res.status(502).json({
-        error: 'card_json_invalid',
-        detail: e.message,
-        content: content.slice(0, 2000),
-      });
+      console.error('api/card: invalid card JSON');
+      return res.status(502).json({ error: 'card_json_invalid' });
     }
+    if (!validCard(card)) return res.status(502).json({ error: 'card_schema_invalid' });
 
     // 의미 검증: blocked에 "없음" 외 항목이 하나라도 있으면 completeness는 BLOCKED
     if (Array.isArray(card.blocked)) {
@@ -221,23 +320,20 @@ blocked 에 내용이 있으면 completeness 는 반드시 "BLOCKED" 이다.
       }
     }
 
-    // electrical이 객체 구조면 items/conflicts 존재 여부만 검증하고, 문자열 배열이면 그대로 둔다.
-    if (card.electrical && typeof card.electrical === 'object' && !Array.isArray(card.electrical)) {
-      if (!Array.isArray(card.electrical.items)) card.electrical.items = [];
-      if (!Array.isArray(card.electrical.conflicts)) card.electrical.conflicts = [];
-    }
-
     return res.status(200).json({
       ok: true,
       card: card,
-      content: content,
+      content: JSON.stringify(card),
       model: data.model,
       usage: data.usage,
     });
   } catch (err) {
-    console.error('api/card: 호출 중 예외', err);
+    console.error('api/card: upstream request failed');
+    if (controller.signal.aborted) return res.status(504).json({ error: 'upstage_timeout' });
     return res.status(502).json({
       error: 'upstage_request_failed',
     });
+  } finally {
+    clearTimeout(timeout);
   }
 }
